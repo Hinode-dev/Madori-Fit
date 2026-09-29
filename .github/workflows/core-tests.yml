@@ -4,10 +4,14 @@ on:
   push:
     paths:
       - "MadoriCore/**"
+      - "App/**"
+      - "project.yml"
       - ".github/workflows/core-tests.yml"
   pull_request:
     paths:
       - "MadoriCore/**"
+      - "App/**"
+      - "project.yml"
 
 jobs:
   test:
@@ -29,4 +33,26 @@ jobs:
           xcodebuild build
           -scheme MadoriApp
           -destination 'generic/platform=iOS'
+          CODE_SIGNING_ALLOWED=NO
+
+  app-build:
+    # project.yml から Xcode プロジェクトを生成し、署名なしでアプリ本体をビルドできるか確認する。
+    # TestFlight 用のシークレットが無くても動く。
+    runs-on: macos-15
+    env:
+      BUNDLE_ID: com.example.madorifit
+      APPLE_TEAM_ID: ABCDE12345
+      BUILD_NUMBER: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: xcodegen
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: xcodebuild (シミュレータ向け、署名なし)
+        run: >
+          xcodebuild build
+          -project MadoriFit.xcodeproj
+          -scheme MadoriFit
+          -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
