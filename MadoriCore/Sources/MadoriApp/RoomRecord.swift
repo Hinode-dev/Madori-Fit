@@ -13,6 +13,8 @@ final class RoomRecord {
     var roomData: Data = Data()
     var furnitureData: Data = Data()
     var conditionsData: Data = Data()
+    /// 家具を運び込むときの通り道（玄関、エレベーターなど）。
+    var passagesData: Data = Data()
 
     @Relationship(deleteRule: .cascade, inverse: \SavedLayout.owner)
     var savedLayouts: [SavedLayout]? = []
@@ -45,6 +47,22 @@ final class RoomRecord {
             conditionsData = Self.encode(newValue) ?? conditionsData
             updatedAt = Date()
         }
+    }
+
+    var passages: [Passage] {
+        get { Self.decode([Passage].self, from: passagesData) ?? [] }
+        set {
+            passagesData = Self.encode(newValue) ?? passagesData
+            updatedAt = Date()
+        }
+    }
+
+    /// 搬入の判定に使う、通り道の全部。入力した通り道と、この部屋のドア。
+    var deliveryRoute: [Passage] {
+        let doors = room.openings.filter { $0.kind == .door }.map {
+            Passage.doorway(name: "この部屋のドア（幅 \(Int($0.width)) cm）", width: $0.width, height: 200)
+        }
+        return passages + doors
     }
 
     /// 保存した配置案を、新しい順に。

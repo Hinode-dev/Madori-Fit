@@ -10,6 +10,7 @@ struct SavedLayoutView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var isThreeD = false
+    @State private var isShowingAR = false
     @State private var isEditing = false
     @State private var isExporting = false
     @State private var isRenaming = false
@@ -31,6 +32,11 @@ struct SavedLayoutView: View {
                 Menu {
                     Button("手で直す", systemImage: "hand.draw") { isEditing = true }
                     Button("画像・PDF に書き出す", systemImage: "square.and.arrow.up") { isExporting = true }
+                    #if os(iOS)
+                    if ARSupport.isAvailable {
+                        Button("ARで実寸表示", systemImage: "arkit") { isShowingAR = true }
+                    }
+                    #endif
                     Button("名前を変える", systemImage: "pencil") {
                         draftName = saved.name
                         isRenaming = true
@@ -107,6 +113,11 @@ struct SavedLayoutView: View {
                 }
             }
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $isShowingAR) {
+            ARPlacementScreen(room: room, items: saved.items) { isShowingAR = false }
+        }
+        #endif
         .sheet(isPresented: $isExporting) {
             LayoutExportSheet(title: "\(room.name.isEmpty ? "部屋" : room.name) \(saved.name)",
                               room: room, layout: layout)

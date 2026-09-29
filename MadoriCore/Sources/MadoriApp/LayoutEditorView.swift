@@ -16,6 +16,7 @@ struct LayoutEditorView: View {
     @State private var pinned: Set<UUID>
     @State private var selectedID: UUID?
     @State private var savedNotice = false
+    @State private var isShowingAR = false
 
     init(record: RoomRecord, room: Room, furniture: [Furniture], conditions: LayoutConditions,
          items: [PlacedFurniture], pinned: Set<UUID>, saveLabel: String,
@@ -54,6 +55,12 @@ struct LayoutEditorView: View {
                     issuesList
                     unplacedList
                     regenerateLink
+                    #if os(iOS)
+                    if ARSupport.isAvailable {
+                        Button("ARで実寸表示", systemImage: "arkit") { isShowingAR = true }
+                            .buttonStyle(.bordered)
+                    }
+                    #endif
                 }
                 .padding(16)
             }
@@ -70,6 +77,11 @@ struct LayoutEditorView: View {
         .alert("保存しました", isPresented: $savedNotice) {
             Button("OK", role: .cancel) {}
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $isShowingAR) {
+            ARPlacementScreen(room: room, items: items) { isShowingAR = false }
+        }
+        #endif
     }
 
     // MARK: 選んだ家具の操作

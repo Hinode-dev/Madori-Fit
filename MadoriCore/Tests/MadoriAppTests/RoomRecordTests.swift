@@ -115,3 +115,28 @@ final class FurnitureUndoTests: XCTestCase {
         XCTAssertEqual(record.furniture.map(\.id), [first.id, desk.id])
     }
 }
+
+final class DeliveryRouteTests: XCTestCase {
+    func testRouteIncludesTheRoomsOwnDoors() {
+        var draft = RoomDraft(name: "洋室")
+        draft.addOpening(kind: .door)
+        draft.addOpening(kind: .window)
+        let record = RoomRecord(room: draft.makeRoom())
+        record.passages = [.doorway(name: "玄関", width: 75, height: 195)]
+
+        let route = record.deliveryRoute
+        XCTAssertEqual(route.count, 2)                       // 玄関 + この部屋のドア（窓は含まない）
+        XCTAssertEqual(route[0].name, "玄関")
+        XCTAssertTrue(route[1].name.hasPrefix("この部屋のドア"))
+        XCTAssertEqual(route[1].openingWidth, 80)
+    }
+
+    func testPassagesRoundTrip() {
+        let record = RoomRecord(room: Room.rectangle(width: 270, depth: 360))
+        XCTAssertTrue(record.passages.isEmpty)
+        let elevator = Passage.elevator(name: "EV", doorWidth: 80, doorHeight: 200,
+                                        cabinWidth: 100, cabinDepth: 130, cabinHeight: 220)
+        record.passages = [elevator]
+        XCTAssertEqual(record.passages, [elevator])
+    }
+}

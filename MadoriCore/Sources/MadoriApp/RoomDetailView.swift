@@ -36,6 +36,7 @@ struct RoomDetailView: View {
     @State private var isConfirmingDelete = false
     @State private var isDeleting = false
     @State private var showsPlan = false
+    @State private var arFurniture: Furniture?
     @State private var selectedOpening: Opening?
 
     var body: some View {
@@ -70,6 +71,7 @@ struct RoomDetailView: View {
         Form {
             roomSection
             furnitureSection
+            deliverySection
             conditionsSection
             Section {
                 NavigationLink("配置案を作る") {
@@ -82,6 +84,11 @@ struct RoomDetailView: View {
             }
             savedLayoutsSection
         }
+        #if os(iOS)
+        .fullScreenCover(item: $arFurniture) { furniture in
+            ARPlacementScreen(furniture: furniture) { arFurniture = nil }
+        }
+        #endif
         .sheet(isPresented: $isEditingRoom) { editRoomSheet }
         .sheet(isPresented: $isAddingFurniture) {
             NavigationStack {
@@ -205,8 +212,20 @@ struct RoomDetailView: View {
                         Text(String(format: "%.0f × %.0f × %.0f cm", item.width, item.depth, item.height))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                        if isBlocked(item) {
+                            Label("搬入で通らない場所があります", systemImage: "exclamationmark.triangle")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
                     }
                 }
+                #if os(iOS)
+                .contextMenu {
+                    if ARSupport.isAvailable {
+                        Button("ARで実寸を確認", systemImage: "arkit") { arFurniture = item }
+                    }
+                }
+                #endif
             }
             .onDelete { offsets in
                 var list = record.furniture
@@ -214,6 +233,37 @@ struct RoomDetailView: View {
                 record.furniture = list
             }
             Button("家具を追加") { isAddingFurniture = true }
+        }
+    }
+
+    // MARK: 搬入チェック
+
+    private func isBlocked(_ furniture: Furniture) -> Bool {
+        let results = DeliveryChecker.check(furniture, route: record.deliveryRoute)
+        return DeliveryChecker.worst(results)?.status == .blocked
+    }
+
+    private var deliverySection: some View {
+        let blocked = record.furniture.filter { isBlocked($0) }.count
+        return Section {
+            NavigationLink {
+                DeliveryCheckView(record: record)
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Label("搬入チェック", systemImage: "shippingbox")
+                    if record.furniture.isEmpty {
+                        Text("家具を追加すると判定します").font(.footnote).foregroundStyle(.secondary)
+                    } else if blocked > 0 {
+                        Text("通らない可能性のある家具: \(blocked) 点")
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                    } else {
+                        Text("登録した通り道は、すべて通れます").font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+            }
+        } footer: {
+            Text("玄関やエレベーターなどの寸法を入れると、家具を運び込めるか確認できます。")
         }
     }
 

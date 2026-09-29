@@ -10,48 +10,51 @@ enum RoomSceneBuilder {
     static let doorHeight = 200.0
     static let windowHeight = 110.0
 
-    static func contentNode(room: Room, items: [PlacedFurniture]) -> SCNNode {
+    /// - Parameter includesShell: 床・壁・ドアの空けておく場所も作る。AR で家具だけ重ねるときは false。
+    static func contentNode(room: Room, items: [PlacedFurniture], includesShell: Bool = true) -> SCNNode {
         let root = SCNNode()
         root.name = "room"
         let ceiling = room.ceilingHeight
 
-        // 床
-        let bounds = room.bounds
-        let floor = SCNBox(width: CGFloat(bounds.width), height: 2, length: CGFloat(bounds.height), chamferRadius: 0)
-        floor.materials = [material(0.86, 0.84, 0.80)]
-        let floorNode = SCNNode(geometry: floor)
-        floorNode.name = "floor"
-        floorNode.position = vector(bounds.center.x, -1, -bounds.center.y)
-        root.addChildNode(floorNode)
+        if includesShell {
+            // 床
+            let bounds = room.bounds
+            let floor = SCNBox(width: CGFloat(bounds.width), height: 2, length: CGFloat(bounds.height), chamferRadius: 0)
+            floor.materials = [material(0.86, 0.84, 0.80)]
+            let floorNode = SCNNode(geometry: floor)
+            floorNode.name = "floor"
+            floorNode.position = vector(bounds.center.x, -1, -bounds.center.y)
+            root.addChildNode(floorNode)
 
-        // ドアの前の空けておく領域
-        for opening in room.openings where opening.kind == .door {
-            let zone = room.zone(for: opening)
-            let mark = SCNBox(width: CGFloat(zone.width), height: 0.5, length: CGFloat(zone.height), chamferRadius: 0)
-            mark.materials = [material(1.0, 0.6, 0.2, alpha: 0.35)]
-            let node = SCNNode(geometry: mark)
-            node.name = "doorZone"
-            node.position = vector(zone.center.x, 0.3, -zone.center.y)
-            root.addChildNode(node)
-        }
+            // ドアの前の空けておく領域
+            for opening in room.openings where opening.kind == .door {
+                let zone = room.zone(for: opening)
+                let mark = SCNBox(width: CGFloat(zone.width), height: 0.5, length: CGFloat(zone.height), chamferRadius: 0)
+                mark.materials = [material(1.0, 0.6, 0.2, alpha: 0.35)]
+                let node = SCNNode(geometry: mark)
+                node.name = "doorZone"
+                node.position = vector(zone.center.x, 0.3, -zone.center.y)
+                root.addChildNode(node)
+            }
 
-        for i in room.corners.indices {
-            for node in wallNodes(room: room, wallIndex: i, ceiling: ceiling) { root.addChildNode(node) }
-        }
+            for i in room.corners.indices {
+                for node in wallNodes(room: room, wallIndex: i, ceiling: ceiling) { root.addChildNode(node) }
+            }
 
-        // 外側から見たときに、壁の角が欠けないようにする。
-        for i in room.corners.indices {
-            let previous = room.wall((i + room.corners.count - 1) % room.corners.count).inwardNormal
-            let next = room.wall(i).inwardNormal
-            let corner = room.corners[i]
-            let size = CGFloat(wallThickness)
-            let post = SCNBox(width: size, height: CGFloat(ceiling), length: size, chamferRadius: 0)
-            post.materials = [wallMaterial()]
-            let node = SCNNode(geometry: post)
-            node.name = "corner"
-            node.position = vector(corner.x - (previous.x + next.x) * wallThickness / 2, ceiling / 2,
-                                   -(corner.y - (previous.y + next.y) * wallThickness / 2))
-            root.addChildNode(node)
+            // 外側から見たときに、壁の角が欠けないようにする。
+            for i in room.corners.indices {
+                let previous = room.wall((i + room.corners.count - 1) % room.corners.count).inwardNormal
+                let next = room.wall(i).inwardNormal
+                let corner = room.corners[i]
+                let size = CGFloat(wallThickness)
+                let post = SCNBox(width: size, height: CGFloat(ceiling), length: size, chamferRadius: 0)
+                post.materials = [wallMaterial()]
+                let node = SCNNode(geometry: post)
+                node.name = "corner"
+                node.position = vector(corner.x - (previous.x + next.x) * wallThickness / 2, ceiling / 2,
+                                       -(corner.y - (previous.y + next.y) * wallThickness / 2))
+                root.addChildNode(node)
+            }
         }
 
         for item in items {
