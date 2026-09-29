@@ -9,7 +9,7 @@ on:
 
 jobs:
   testflight:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     env:
       BUNDLE_ID: ${{ secrets.BUNDLE_ID }}
@@ -29,6 +29,19 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Xcode 26 以降を選択
+        # App Store Connect は Xcode 26 以降 (iOS 26 SDK 以降) でビルドしたアプリだけを受け付ける。
+        run: |
+          echo "入っている Xcode:"
+          ls -d /Applications/Xcode*.app
+          latest=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$latest" ]; then
+            echo "::error::Xcode 26 以降がこのランナーにありません"
+            exit 1
+          fi
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
 
       - name: テスト
         working-directory: MadoriCore
