@@ -35,38 +35,43 @@ public struct LayoutGenerator: Sendable {
     /// - Parameters:
     ///   - count: 欲しい案の数。似た案しかできなければ、これより少なくなる。
     ///   - minDifference: 案どうしの平均移動量 (cm) がこれ以上なら別の案とみなす。
+    ///   - fixed: 位置を固定する家具。どの案でもそのまま置き、残りの家具をその周りに置く。
     public func generate(count: Int = 3, seed: UInt64 = 1, attempts: Int = 200,
-                         minDifference: Double = 60) -> [Layout] {
+                         minDifference: Double = 60, fixed: [PlacedFurniture] = []) -> [Layout] {
         let evaluator = LayoutEvaluator(room: room, conditions: conditions)
         var rng = SeededGenerator(seed: seed)
 
         var results: [Layout] = []
         for _ in 0..<attempts {
-            results.append(attempt(evaluator: evaluator, rng: &rng))
+            results.append(attempt(evaluator: evaluator, fixed: fixed, rng: &rng))
         }
         // 問題が少ない順、次にスコアが高い順。
         results.sort {
             $0.issues.count != $1.issues.count ? $0.issues.count < $1.issues.count : $0.score > $1.score
         }
 
+        // 固定した家具は、どの案でも同じなので、案どうしの違いには数えない。
+        let fixedIDs = Set(fixed.map { $0.furniture.id })
         var selected: [Layout] = []
         for layout in results {
             guard selected.count < count else { break }
-            if selected.allSatisfy({ Self.difference($0, layout) >= minDifference }) {
+            if selected.allSatisfy({ Self.difference($0, layout, excluding: fixedIDs) >= minDifference }) {
                 selected.append(layout)
             }
         }
         return selected
     }
 
-    private func attempt(evaluator: LayoutEvaluator, rng: inout SeededGenerator) -> Layout {
+    private func attempt(evaluator: LayoutEvaluator, fixed: [PlacedFurniture],
+                         rng: inout SeededGenerator) -> Layout {
+        let fixedIDs = Set(fixed.map { $0.furniture.id })
         var keyed: [(Furniture, Double)] = []
-        for f in furniture {
+        for f in furniture where !fixedIDs.contains(f.id) {
             keyed.append((f, f.width * f.depth * Double.random(in: 0.6...1.4, using: &rng)))
         }
         let order = keyed.sorted { $0.1 > $1.1 }.map { $0.0 }
 
-        var placed: [PlacedFurniture] = []
+        var placed: [PlacedFurniture] = fixed
         var unplaced: [Furniture] = []
         for f in order {
             var scored: [(PlacedFurniture, Double)] = []
@@ -131,13 +136,15 @@ public struct LayoutGenerator: Sendable {
     }
 
     /// 2 つの案で、同じ家具がどれだけ動いたかの平均 (cm)。向きが違えば 100 を足す。
-    static func difference(_ a: Layout, _ b: Layout) -> Double {
+    static func difference(_ a: Layout, _ b: Layout, excluding: Set<UUID> = []) -> Double {
         var total = 0.0
-        for x in a.items {
+        var count = 0
+        for x in a.items where !excluding.contains(x.furniture.id) {
+            count += 1
             guard let y = b.items.first(where: { $0.furniture.id == x.furniture.id }) else { continue }
             total += x.center.distance(to: y.center)
             if x.quarterTurns != y.quarterTurns { total += 100 }
         }
-        return total / Double(max(a.items.count, 1))
+        return total / Double(max(count, 1))
     }
 }

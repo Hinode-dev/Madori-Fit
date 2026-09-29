@@ -7,25 +7,30 @@ extension LayoutIssue {
         switch kind {
         case .unplaced: return "\(furnitureName): 置き場所が見つかりません"
         case .inaccessible: return "\(furnitureName): 通路が確保できません"
+        case .invalid: return "\(furnitureName): はみ出し、または重なりがあります"
         }
     }
 }
 
 /// 配置案の一覧。1 案ごとにカードとして縦に並べる。
-public struct LayoutGalleryView: View {
+public struct LayoutGalleryView<Actions: View>: View {
     public let room: Room
     public let layouts: [MadoriCore.Layout]
+    private let actions: (MadoriCore.Layout, Int) -> Actions
 
-    public init(room: Room, layouts: [MadoriCore.Layout]) {
+    /// - Parameter actions: 案ごとに、カードの下に出すボタンなど。引数は、案と、何番目か。
+    public init(room: Room, layouts: [MadoriCore.Layout],
+                @ViewBuilder actions: @escaping (MadoriCore.Layout, Int) -> Actions) {
         self.room = room
         self.layouts = layouts
+        self.actions = actions
     }
 
     public var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(Array(layouts.enumerated()), id: \.element.id) { index, layout in
-                    LayoutCard(room: room, layout: layout, index: index)
+                    LayoutCard(room: room, layout: layout, index: index, actions: actions(layout, index))
                 }
             }
             .padding(16)
@@ -33,10 +38,17 @@ public struct LayoutGalleryView: View {
     }
 }
 
-private struct LayoutCard: View {
+extension LayoutGalleryView where Actions == EmptyView {
+    public init(room: Room, layouts: [MadoriCore.Layout]) {
+        self.init(room: room, layouts: layouts) { _, _ in EmptyView() }
+    }
+}
+
+private struct LayoutCard<Actions: View>: View {
     let room: Room
     let layout: MadoriCore.Layout
     let index: Int
+    let actions: Actions
     @State private var isThreeD = false
 
     var body: some View {
@@ -65,6 +77,7 @@ private struct LayoutCard: View {
                     Label(issue.message, systemImage: "exclamationmark.triangle").foregroundStyle(.red)
                 }
             }
+            actions
         }
         .padding(12)
         .background(.background, in: RoundedRectangle(cornerRadius: 12))

@@ -14,6 +14,9 @@ final class RoomRecord {
     var furnitureData: Data = Data()
     var conditionsData: Data = Data()
 
+    @Relationship(deleteRule: .cascade, inverse: \SavedLayout.owner)
+    var savedLayouts: [SavedLayout]? = []
+
     init(room: Room) {
         self.name = room.name
         self.roomData = Self.encode(room) ?? Data()
@@ -44,6 +47,11 @@ final class RoomRecord {
         }
     }
 
+    /// 保存した配置案を、新しい順に。
+    var sortedSavedLayouts: [SavedLayout] {
+        (savedLayouts ?? []).sorted { $0.createdAt > $1.createdAt }
+    }
+
     private static func encode<T: Encodable>(_ value: T) -> Data? {
         try? JSONEncoder().encode(value)
     }
@@ -57,6 +65,6 @@ public enum MadoriStorage {
     /// アプリ全体で使う保存先。iCloud 同期は、いまは無効。
     public static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: inMemory, cloudKitDatabase: .none)
-        return try ModelContainer(for: RoomRecord.self, configurations: configuration)
+        return try ModelContainer(for: RoomRecord.self, SavedLayout.self, configurations: configuration)
     }
 }

@@ -29,29 +29,98 @@ extension LayoutPreference {
 
 struct RoomDetailView: View {
     @Bindable var record: RoomRecord
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
     @State private var isEditingRoom = false
     @State private var isAddingFurniture = false
+    @State private var isConfirmingDelete = false
+    @State private var isDeleting = false
 
     var body: some View {
+        Group {
+            if isDeleting {
+                Color.clear
+            } else {
+                form
+            }
+        }
+        .navigationTitle(isDeleting ? "" : (record.name.isEmpty ? "名称未設定" : record.name))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button("この部屋を削除", systemImage: "trash", role: .destructive) {
+                        isConfirmingDelete = true
+                    }
+                } label: {
+                    Label("その他", systemImage: "ellipsis.circle")
+                }
+            }
+        }
+        .confirmationDialog("この部屋を削除しますか？", isPresented: $isConfirmingDelete,
+                            titleVisibility: .visible) {
+            Button("削除", role: .destructive) { deleteRoom() }
+        } message: {
+            Text("家具の設定と、保存した配置案も一緒に削除されます。元に戻せません。")
+        }
+    }
+
+    private var form: some View {
         Form {
             roomSection
             furnitureSection
             conditionsSection
             Section {
                 NavigationLink("配置案を作る") {
-                    LayoutResultsView(room: record.room, furniture: record.furniture,
+                    LayoutResultsView(record: record, room: record.room, furniture: record.furniture,
                                       conditions: record.conditions)
                 }
                 .disabled(record.furniture.isEmpty)
             } footer: {
                 if record.furniture.isEmpty { Text("家具を追加すると、配置案を作れます") }
             }
+            savedLayoutsSection
         }
-        .navigationTitle(record.name.isEmpty ? "名称未設定" : record.name)
         .sheet(isPresented: $isEditingRoom) { editRoomSheet }
         .sheet(isPresented: $isAddingFurniture) {
             NavigationStack {
                 FurniturePickerView(addedCount: record.furniture.count) { add($0) }
+            }
+        }
+    }
+
+    /// 画面を消してから、少し待って削除する。消えかけの画面が、削除済みのデータを読まないようにするため。
+    private func deleteRoom() {
+        isDeleting = true
+        dismiss()
+        let target = record
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            context.delete(target)
+        }
+    }
+
+    // MARK: 保存した配置案
+
+    @ViewBuilder
+    private var savedLayoutsSection: some View {
+        let saved = record.sortedSavedLayouts
+        if !saved.isEmpty {
+            Section("保存した配置案（\(saved.count)）") {
+                ForEach(saved) { layout in
+                    NavigationLink {
+                        SavedLayoutView(saved: layout)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(layout.name)
+                            Text("家具 \(layout.items.count) 点・\(layout.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .onDelete { offsets in
+                    for i in offsets { context.delete(saved[i]) }
+                }
             }
         }
     }

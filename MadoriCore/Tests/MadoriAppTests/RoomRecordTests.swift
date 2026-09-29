@@ -40,3 +40,57 @@ final class RoomRecordTests: XCTestCase {
         XCTAssertEqual(fetched.first?.room.name, "保存テスト")
     }
 }
+
+final class SavedLayoutTests: XCTestCase {
+    private func makeLayoutData() throws -> (Room, [PlacedFurniture]) {
+        let room = Room.rectangle(name: "洋室", width: 270, depth: 360)
+        let bed = try XCTUnwrap(FurniturePresets.preset(named: "シングルベッド"))
+        let item = PlacedFurniture(furniture: bed, center: Point(x: 60, y: 262.5), quarterTurns: 2)
+        return (room, [item])
+    }
+
+    func testRoundTripsSnapshot() throws {
+        let (room, items) = try makeLayoutData()
+        let pinned: Set<UUID> = [items[0].furniture.id]
+        let saved = SavedLayout(name: "案1", room: room, conditions: LayoutConditions(minWalkway: 70),
+                                items: items, pinned: pinned)
+        XCTAssertEqual(saved.room, room)
+        XCTAssertEqual(saved.items, items)
+        XCTAssertEqual(saved.pinned, pinned)
+        XCTAssertEqual(saved.conditions.minWalkway, 70)
+        XCTAssertTrue(saved.layout.issues.isEmpty, "\(saved.layout.issues)")
+
+        saved.items = []
+        saved.pinned = []
+        XCTAssertTrue(saved.items.isEmpty)
+        XCTAssertTrue(saved.pinned.isEmpty)
+    }
+
+    func testDeletingRoomDeletesSavedLayouts() throws {
+        let (room, items) = try makeLayoutData()
+        let container = try MadoriStorage.makeContainer(inMemory: true)
+        let context = ModelContext(container)
+        let record = RoomRecord(room: room)
+        context.insert(record)
+        let saved = SavedLayout(name: "案1", room: room, conditions: LayoutConditions(), items: items, pinned: [])
+        context.insert(saved)
+        saved.owner = record
+        try context.save()
+
+        XCTAssertEqual(record.sortedSavedLayouts.count, 1)
+        context.delete(record)
+        try context.save()
+        XCTAssertTrue(try context.fetch(FetchDescriptor<SavedLayout>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<RoomRecord>()).isEmpty)
+    }
+
+    func testSavedLayoutSurvivesRoomEdits() throws {
+        let (room, items) = try makeLayoutData()
+        let record = RoomRecord(room: room)
+        let saved = SavedLayout(name: "案1", room: room, conditions: LayoutConditions(), items: items, pinned: [])
+        saved.owner = record
+        // 部屋の寸法を変えても、保存した案は保存時の部屋のまま。
+        record.room = Room.rectangle(name: "洋室", width: 400, depth: 500)
+        XCTAssertEqual(saved.room.bounds.width, 270)
+    }
+}

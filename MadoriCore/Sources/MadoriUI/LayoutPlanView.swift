@@ -7,28 +7,44 @@ public struct LayoutPlanView: View {
     public let layout: MadoriCore.Layout?
     public var showsClearance: Bool
     public var showsLabels: Bool
+    public var selectedID: UUID?
+    public var pinnedIDs: Set<UUID>
+    /// 部屋の幅と奥行きの寸法を、外側に書く。
+    public var showsDimensions: Bool
 
     public init(room: Room, layout: MadoriCore.Layout? = nil,
-                showsClearance: Bool = true, showsLabels: Bool = true) {
+                showsClearance: Bool = true, showsLabels: Bool = true,
+                selectedID: UUID? = nil, pinnedIDs: Set<UUID> = [], showsDimensions: Bool = false) {
         self.room = room
         self.layout = layout
         self.showsClearance = showsClearance
         self.showsLabels = showsLabels
+        self.selectedID = selectedID
+        self.pinnedIDs = pinnedIDs
+        self.showsDimensions = showsDimensions
+    }
+
+    /// 図の周りの余白 (pt)。寸法を書くときは、文字の分だけ広げる。
+    public static func padding(showsDimensions: Bool) -> CGFloat {
+        showsDimensions ? 32 : 12
     }
 
     public var body: some View {
         let bounds = room.bounds
         Canvas { context, size in
-            let t = PlanTransform(bounds: bounds, size: size, padding: 12)
+            let t = PlanTransform(bounds: bounds, size: size, padding: Self.padding(showsDimensions: showsDimensions))
             drawRoom(&context, t)
             drawOpenings(&context, t)
+            if showsDimensions { drawDimensions(&context, t) }
             if let layout {
                 let problemIDs = Set(layout.issues.map(\.furnitureID))
                 if showsClearance {
                     for item in layout.items { drawClearance(&context, t, item) }
                 }
                 for item in layout.items {
-                    drawFurniture(&context, t, item, hasProblem: problemIDs.contains(item.furniture.id))
+                    drawFurniture(&context, t, item, hasProblem: problemIDs.contains(item.furniture.id),
+                                  isSelected: item.furniture.id == selectedID,
+                                  isPinned: pinnedIDs.contains(item.furniture.id))
                 }
             }
         }
@@ -81,13 +97,34 @@ public struct LayoutPlanView: View {
                        style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
     }
 
+    private func drawDimensions(_ context: inout GraphicsContext, _ t: PlanTransform) {
+        let b = room.bounds
+        let secondary = Color.secondary
+        let bottom = t.point(Point(x: b.center.x, y: b.minY))
+        context.draw(Text("\(Int(b.width)) cm").font(.system(size: 12)).foregroundStyle(secondary),
+                     at: CGPoint(x: bottom.x, y: bottom.y + 18))
+        let left = t.point(Point(x: b.minX, y: b.center.y))
+        var rotated = context
+        rotated.translateBy(x: left.x - 18, y: left.y)
+        rotated.rotate(by: .degrees(-90))
+        rotated.draw(Text("\(Int(b.height)) cm").font(.system(size: 12)).foregroundStyle(secondary), at: .zero)
+    }
+
     private func drawFurniture(_ context: inout GraphicsContext, _ t: PlanTransform,
-                               _ item: PlacedFurniture, hasProblem: Bool) {
+                               _ item: PlacedFurniture, hasProblem: Bool,
+                               isSelected: Bool = false, isPinned: Bool = false) {
         let color = hasProblem ? Color.red : Palette.color(for: item.furniture.category)
         let rect = t.rect(item.footprint)
         let body = Path(roundedRect: rect, cornerRadius: 3)
         context.fill(body, with: .color(color.opacity(0.35)))
         context.stroke(body, with: .color(color), style: StrokeStyle(lineWidth: 1.5))
+        if isSelected {
+            context.stroke(Path(roundedRect: rect.insetBy(dx: -3, dy: -3), cornerRadius: 5),
+                           with: .color(.accentColor), style: StrokeStyle(lineWidth: 3))
+        }
+        if isPinned {
+            context.draw(Image(systemName: "pin.fill"), at: CGPoint(x: rect.maxX - 8, y: rect.minY + 8))
+        }
 
         // 正面を示す三角形。
         let f = item.frontDirection

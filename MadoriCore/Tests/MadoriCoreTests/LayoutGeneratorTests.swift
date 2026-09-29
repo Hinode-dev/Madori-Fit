@@ -92,3 +92,77 @@ final class LayoutGeneratorTests: XCTestCase {
         XCTAssertTrue(blocked.contains(where: { $0.furniture.name == "奥の棚" }))
     }
 }
+
+final class FixedPlacementTests: XCTestCase {
+    private func room() -> Room {
+        Room.rectangle(width: 270, depth: 360, openings: [
+            Opening(kind: .door, wallIndex: 0, offset: 20, width: 80)
+        ])
+    }
+
+    func testFixedFurnitureStaysPutInEveryLayout() throws {
+        let furniture = ["シングルベッド", "デスク", "ワードローブ"].compactMap { FurniturePresets.preset(named: $0) }
+        let bed = furniture[0]
+        // 上の壁に、頭側を付けて置く。
+        let fixedBed = PlacedFurniture(furniture: bed, center: Point(x: 60, y: 360 - 195 / 2), quarterTurns: 2)
+        let layouts = LayoutGenerator(room: room(), furniture: furniture)
+            .generate(count: 3, fixed: [fixedBed])
+
+        XCTAssertFalse(layouts.isEmpty)
+        for layout in layouts {
+            let placedBed = try XCTUnwrap(layout.items.first { $0.furniture.id == bed.id })
+            XCTAssertEqual(placedBed, fixedBed)
+            XCTAssertEqual(layout.items.filter { $0.furniture.id == bed.id }.count, 1)
+        }
+        XCTAssertTrue(layouts[0].issues.isEmpty, "\(layouts[0].issues)")
+    }
+
+    func testOtherFurnitureAvoidsFixedOne() throws {
+        let furniture = ["シングルベッド", "デスク"].compactMap { FurniturePresets.preset(named: $0) }
+        let fixedBed = PlacedFurniture(furniture: furniture[0], center: Point(x: 60, y: 260), quarterTurns: 2)
+        let layouts = LayoutGenerator(room: room(), furniture: furniture).generate(count: 3, fixed: [fixedBed])
+        for layout in layouts {
+            let desk = try XCTUnwrap(layout.items.first { $0.furniture.id == furniture[1].id })
+            XCTAssertFalse(desk.footprint.intersects(fixedBed.footprint))
+        }
+    }
+
+    func testInvalidFixedPlacementIsReported() {
+        let bed = FurniturePresets.preset(named: "シングルベッド")!
+        // 部屋の外にはみ出した位置。
+        let outside = PlacedFurniture(furniture: bed, center: Point(x: 0, y: 0), quarterTurns: 0)
+        let evaluator = LayoutEvaluator(room: room(), conditions: LayoutConditions())
+        let layout = evaluator.evaluate(items: [outside], unplaced: [])
+        XCTAssertTrue(layout.issues.contains { $0.kind == .invalid })
+    }
+}
+
+final class LayoutEditingTests: XCTestCase {
+    private let room = Room.rectangle(width: 300, depth: 400)
+    private let bed = Furniture(name: "bed", category: .bed, width: 100, depth: 200, height: 40)
+
+    func testSnapsToNearbyWall() {
+        // 左の壁から 10cm 離れている（幅 100 の中心 60 → 左端 10）。
+        let p = PlacedFurniture(furniture: bed, center: Point(x: 60, y: 200), quarterTurns: 0)
+        let snapped = LayoutEditing.snapped(p, in: room)
+        XCTAssertEqual(snapped.center.x, 50, accuracy: 0.001)
+        XCTAssertEqual(snapped.center.y, 200, accuracy: 0.001)
+    }
+
+    func testDoesNotSnapWhenFarFromWalls() {
+        let p = PlacedFurniture(furniture: bed, center: Point(x: 150, y: 200), quarterTurns: 0)
+        XCTAssertEqual(LayoutEditing.snapped(p, in: room), p)
+    }
+
+    func testRotationWrapsAround() {
+        var p = PlacedFurniture(furniture: bed, center: Point(x: 150, y: 200), quarterTurns: 3)
+        p = LayoutEditing.rotated(p)
+        XCTAssertEqual(p.quarterTurns, 0)
+        XCTAssertEqual(p.center, Point(x: 150, y: 200))
+    }
+
+    func testPlacedAtCenter() {
+        let p = LayoutEditing.placedAtCenter(bed, in: room)
+        XCTAssertEqual(p.center, Point(x: 150, y: 200))
+    }
+}

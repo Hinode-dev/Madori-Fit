@@ -27,6 +27,8 @@ public struct LayoutIssue: Codable, Hashable, Sendable {
         case unplaced
         /// ドアから正面までの通路幅が確保できない。
         case inaccessible
+        /// 部屋からはみ出している、ほかの家具やドアの開閉スペースと重なっている、など。
+        case invalid
     }
 
     public var kind: Kind

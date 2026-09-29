@@ -139,6 +139,14 @@ public struct LayoutEvaluator: Sendable {
         var issues = unplaced.map {
             LayoutIssue(kind: .unplaced, furnitureID: $0.id, furnitureName: $0.name)
         }
+        for (i, item) in items.enumerated() {
+            var others = items
+            others.remove(at: i)
+            if !isPlacementValid(item, others: others) {
+                issues.append(LayoutIssue(kind: .invalid, furnitureID: item.furniture.id,
+                                          furnitureName: item.furniture.name))
+            }
+        }
         issues += inaccessibleItems(items).map {
             LayoutIssue(kind: .inaccessible, furnitureID: $0.furniture.id, furnitureName: $0.furniture.name)
         }
