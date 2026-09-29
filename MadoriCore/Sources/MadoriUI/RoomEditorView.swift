@@ -98,11 +98,16 @@ struct OpeningRow: View {
     }
 }
 
-struct NumberField: View {
+public struct NumberField: View {
     let title: String
     @Binding var value: Double
 
-    var body: some View {
+    public init(title: String, value: Binding<Double>) {
+        self.title = title
+        _value = value
+    }
+
+    public var body: some View {
         HStack {
             Text(title)
             Spacer()
