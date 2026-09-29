@@ -52,6 +52,13 @@ enum FurnitureModelBuilder {
         let h: Double
         let base: RGB
 
+        // 外側の型の定数と関数への近道。
+        private var wood: RGB { FurnitureModelBuilder.wood }
+        private var lightWood: RGB { FurnitureModelBuilder.lightWood }
+        private var white: RGB { FurnitureModelBuilder.white }
+        private var dark: RGB { FurnitureModelBuilder.dark }
+        private func shade(_ c: RGB, _ k: Double) -> RGB { FurnitureModelBuilder.shade(c, k) }
+
         @discardableResult
         func box(_ bw: Double, _ bh: Double, _ bl: Double, x: Double = 0, y: Double = 0, z: Double = 0,
                  _ color: RGB, chamfer: Double = 0.6) -> SCNNode {
