@@ -90,8 +90,8 @@ struct RoomScanRepresentable: UIViewRepresentable {
     let controller: ScanController
     let onResult: (Result<CapturedRoom, Error>) -> Void
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onResult: onResult)
+    func makeCoordinator() -> RoomScanCoordinator {
+        RoomScanCoordinator(onResult: onResult)
     }
 
     func makeUIView(context: Context) -> RoomCaptureView {
@@ -104,34 +104,35 @@ struct RoomScanRepresentable: UIViewRepresentable {
 
     func updateUIView(_ uiView: RoomCaptureView, context: Context) {}
 
-    static func dismantleUIView(_ uiView: RoomCaptureView, coordinator: Coordinator) {
+    static func dismantleUIView(_ uiView: RoomCaptureView, coordinator: RoomScanCoordinator) {
         uiView.captureSession.stop()
     }
+}
 
-    final class Coordinator: NSObject, RoomCaptureViewDelegate {
-        private let onResult: (Result<CapturedRoom, Error>) -> Void
+@objc(MadoriRoomScanCoordinator)
+final class RoomScanCoordinator: NSObject, RoomCaptureViewDelegate {
+    private let onResult: (Result<CapturedRoom, Error>) -> Void
 
-        init(onResult: @escaping (Result<CapturedRoom, Error>) -> Void) {
-            self.onResult = onResult
-            super.init()
-        }
+    init(onResult: @escaping (Result<CapturedRoom, Error>) -> Void) {
+        self.onResult = onResult
+        super.init()
+    }
 
-        // RoomCaptureViewDelegate は NSCoding に準拠しているが、保存はしない。
-        required init?(coder: NSCoder) {
-            return nil
-        }
+    // RoomCaptureViewDelegate は NSCoding に準拠しているが、保存はしない。
+    required init?(coder: NSCoder) {
+        return nil
+    }
 
-        func encode(with coder: NSCoder) {}
+    func encode(with coder: NSCoder) {}
 
-        func captureView(shouldPresent roomDataForProcessing: CapturedRoomData, error: Error?) -> Bool {
-            error == nil
-        }
+    func captureView(shouldPresent roomDataForProcessing: CapturedRoomData, error: Error?) -> Bool {
+        error == nil
+    }
 
-        func captureView(didPresent processedResult: CapturedRoom, error: Error?) {
-            let result: Result<CapturedRoom, Error> = error.map { .failure($0) } ?? .success(processedResult)
-            DispatchQueue.main.async { [onResult] in
-                onResult(result)
-            }
+    func captureView(didPresent processedResult: CapturedRoom, error: Error?) {
+        let result: Result<CapturedRoom, Error> = error.map { .failure($0) } ?? .success(processedResult)
+        DispatchQueue.main.async { [onResult] in
+            onResult(result)
         }
     }
 }
