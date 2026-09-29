@@ -1,6 +1,7 @@
 import XCTest
 import SwiftData
 import MadoriCore
+import MadoriUI
 @testable import MadoriApp
 
 final class RoomRecordTests: XCTestCase {
@@ -38,5 +39,30 @@ final class RoomRecordTests: XCTestCase {
         let fetched = try context.fetch(FetchDescriptor<RoomRecord>())
         XCTAssertEqual(fetched.count, 1)
         XCTAssertEqual(fetched.first?.room.name, "保存テスト")
+    }
+}
+
+final class RoomPhotoTests: XCTestCase {
+    func testPhotosBelongToRoomAndAreDeletedWithIt() throws {
+        let container = try MadoriStorage.makeContainer(inMemory: true)
+        let context = ModelContext(container)
+        let record = RoomRecord(room: Room.rectangle(name: "写真テスト", width: 270, depth: 360))
+        context.insert(record)
+
+        let photo = RoomPhoto(imageData: Data([1, 2, 3]))
+        photo.room = record
+        photo.side = .north
+        context.insert(photo)
+        try context.save()
+
+        XCTAssertEqual(record.sortedPhotos.count, 1)
+        XCTAssertEqual(record.referencePhotos.first?.side, .north)
+
+        photo.side = nil
+        XCTAssertEqual(photo.sideRaw, "")
+
+        context.delete(record)
+        try context.save()
+        XCTAssertTrue(try context.fetch(FetchDescriptor<RoomPhoto>()).isEmpty)
     }
 }

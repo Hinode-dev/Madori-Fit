@@ -14,6 +14,9 @@ final class RoomRecord {
     var furnitureData: Data = Data()
     var conditionsData: Data = Data()
 
+    @Relationship(deleteRule: .cascade, inverse: \RoomPhoto.room)
+    var photos: [RoomPhoto]? = []
+
     init(room: Room) {
         self.name = room.name
         self.roomData = Self.encode(room) ?? Data()
@@ -44,6 +47,10 @@ final class RoomRecord {
         }
     }
 
+    var sortedPhotos: [RoomPhoto] {
+        (photos ?? []).sorted { $0.createdAt < $1.createdAt }
+    }
+
     private static func encode<T: Encodable>(_ value: T) -> Data? {
         try? JSONEncoder().encode(value)
     }
@@ -57,6 +64,26 @@ public enum MadoriStorage {
     /// アプリ全体で使う保存先。iCloud 同期は、いまは無効。
     public static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: inMemory, cloudKitDatabase: .none)
-        return try ModelContainer(for: RoomRecord.self, configurations: configuration)
+        return try ModelContainer(for: RoomRecord.self, RoomPhoto.self, configurations: configuration)
+    }
+}
+
+/// 部屋の参考写真。画像は縮小した JPEG で、データベースの外のファイルとして保存される。
+@Model
+final class RoomPhoto {
+    var uid: UUID = UUID()
+    @Attribute(.externalStorage) var imageData: Data = Data()
+    /// `WallSide` の rawValue。空なら壁の指定なし。
+    var sideRaw: String = ""
+    var createdAt: Date = Date()
+    var room: RoomRecord?
+
+    init(imageData: Data) {
+        self.imageData = imageData
+    }
+
+    var side: WallSide? {
+        get { WallSide(rawValue: sideRaw) }
+        set { sideRaw = newValue?.rawValue ?? "" }
     }
 }
