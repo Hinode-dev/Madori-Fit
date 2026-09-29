@@ -202,8 +202,8 @@ final class FurnitureModelKindTests: XCTestCase {
         XCTAssertEqual(kind("私のベッド", .other), .bed)
         XCTAssertEqual(kind("ローテーブル", .table, h: 40), .lowTable)
         XCTAssertEqual(kind("ダイニングテーブル", .table, h: 72), .table)
-        XCTAssertEqual(kind("本棚", .storage, h: 180, d: 30), .bookshelf)
-        XCTAssertEqual(kind("ワードローブ", .storage, h: 180, d: 55), .wardrobe)
+        XCTAssertEqual(kind("本棚", .storage, d: 30, h: 180), .bookshelf)
+        XCTAssertEqual(kind("ワードローブ", .storage, d: 55, h: 180), .wardrobe)
         XCTAssertEqual(kind("冷蔵庫", .appliance, h: 170), .fridge)
         XCTAssertEqual(kind("洗濯機", .appliance, h: 100), .washer)
     }
@@ -211,8 +211,8 @@ final class FurnitureModelKindTests: XCTestCase {
     func testFallsBackToCategoryAndSize() {
         XCTAssertEqual(kind("名無し", .table, h: 40), .lowTable)
         XCTAssertEqual(kind("名無し", .table, h: 72), .table)
-        XCTAssertEqual(kind("名無し", .storage, h: 180, d: 30), .bookshelf)
-        XCTAssertEqual(kind("名無し", .storage, h: 180, d: 60), .wardrobe)
+        XCTAssertEqual(kind("名無し", .storage, d: 30, h: 180), .bookshelf)
+        XCTAssertEqual(kind("名無し", .storage, d: 60, h: 180), .wardrobe)
         XCTAssertEqual(kind("名無し", .storage, h: 90), .chest)
         XCTAssertEqual(kind("名無し", .appliance, h: 90), .washer)
         XCTAssertEqual(kind("名無し", .other), .generic)
