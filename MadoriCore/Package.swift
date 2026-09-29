@@ -15,6 +15,6 @@ let package = Package(
         .target(name: "MadoriApp", dependencies: ["MadoriCore", "MadoriUI"]),
         .testTarget(name: "MadoriCoreTests", dependencies: ["MadoriCore"]),
         .testTarget(name: "MadoriUITests", dependencies: ["MadoriUI", "MadoriCore"]),
-        .testTarget(name: "MadoriAppTests", dependencies: ["MadoriApp", "MadoriUI", "MadoriCore"])
+        .testTarget(name: "MadoriAppTests", dependencies: ["MadoriApp", "MadoriCore"])
     ]
 )
