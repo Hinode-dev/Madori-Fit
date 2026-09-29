@@ -4,3 +4,7 @@
 xcuserdata/
 DerivedData/
 *.xcuserstate
+# XcodeGen が生成するもの
+*.xcodeproj
+Config/
+build/
