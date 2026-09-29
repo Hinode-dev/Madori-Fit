@@ -193,24 +193,24 @@ private struct PassageEditor: View {
             switch passage.kind {
             case .doorway:
                 Section("開口") {
-                    NumberField(title: "幅 (cm)", value: $passage.openingWidth)
-                    NumberField(title: "高さ (cm)", value: $passage.openingHeight)
+                    NumberField(title: "幅 (cm)", value: $passage.openingWidth, measures: true)
+                    NumberField(title: "高さ (cm)", value: $passage.openingHeight, measures: true)
                 }
             case .corner:
                 Section("廊下・階段") {
-                    NumberField(title: "手前の幅 (cm)", value: $passage.corridorWidth1)
-                    NumberField(title: "先の幅 (cm)", value: $passage.corridorWidth2)
-                    NumberField(title: "天井の高さ (cm)", value: $passage.ceilingHeight)
+                    NumberField(title: "手前の幅 (cm)", value: $passage.corridorWidth1, measures: true)
+                    NumberField(title: "先の幅 (cm)", value: $passage.corridorWidth2, measures: true)
+                    NumberField(title: "天井の高さ (cm)", value: $passage.ceilingHeight, measures: true)
                 }
             case .elevator:
                 Section("扉") {
-                    NumberField(title: "幅 (cm)", value: $passage.openingWidth)
-                    NumberField(title: "高さ (cm)", value: $passage.openingHeight)
+                    NumberField(title: "幅 (cm)", value: $passage.openingWidth, measures: true)
+                    NumberField(title: "高さ (cm)", value: $passage.openingHeight, measures: true)
                 }
                 Section("かごの内側") {
-                    NumberField(title: "幅 (cm)", value: $passage.cabinWidth)
-                    NumberField(title: "奥行き (cm)", value: $passage.cabinDepth)
-                    NumberField(title: "高さ (cm)", value: $passage.cabinHeight)
+                    NumberField(title: "幅 (cm)", value: $passage.cabinWidth, measures: true)
+                    NumberField(title: "奥行き (cm)", value: $passage.cabinDepth, measures: true)
+                    NumberField(title: "高さ (cm)", value: $passage.cabinHeight, measures: true)
                 }
             }
             if !isValid {

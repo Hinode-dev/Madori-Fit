@@ -42,8 +42,8 @@ public struct RoomEditorView: View {
             }
             Section("部屋") {
                 TextField("名前（例: 洋室）", text: $draft.name)
-                NumberField(title: "幅 (cm)", value: $draft.width)
-                NumberField(title: "奥行き (cm)", value: $draft.depth)
+                NumberField(title: "幅 (cm)", value: $draft.width, measures: true)
+                NumberField(title: "奥行き (cm)", value: $draft.depth, measures: true)
                 if draft.isSizeValid {
                     Text(String(format: "約 %.1f 畳（1畳 = 1.62㎡）", draft.areaInTatami))
                         .foregroundStyle(.secondary)
@@ -157,8 +157,8 @@ struct OpeningRow: View {
                 }
             }
             .pickerStyle(.segmented)
-            NumberField(title: opening.side.offsetTitle, value: $opening.offset)
-            NumberField(title: "幅 (cm)", value: $opening.width)
+            NumberField(title: opening.side.offsetTitle, value: $opening.offset, measures: true)
+            NumberField(title: "幅 (cm)", value: $opening.width, measures: true)
         }
         .padding(.vertical, 4)
     }
@@ -167,10 +167,16 @@ struct OpeningRow: View {
 public struct NumberField: View {
     let title: String
     @Binding var value: Double
+    let measures: Bool
+    #if os(iOS)
+    @State private var isMeasuring = false
+    #endif
 
-    public init(title: String, value: Binding<Double>) {
+    /// - Parameter measures: true なら、AR で測って入れるボタンを、横に出す（対応した端末のみ）。
+    public init(title: String, value: Binding<Double>, measures: Bool = false) {
         self.title = title
         _value = value
+        self.measures = measures
     }
 
     public var body: some View {
@@ -183,7 +189,26 @@ public struct NumberField: View {
                 .keyboardType(.decimalPad)
                 #endif
                 .frame(maxWidth: 100)
+            #if os(iOS)
+            if measures && ARSupport.isAvailable {
+                Button {
+                    isMeasuring = true
+                } label: {
+                    Image(systemName: "ruler")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("ARで測る")
+            }
+            #endif
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $isMeasuring) {
+            ARMeasureScreen(title: title, onResult: { cm in
+                value = cm
+                isMeasuring = false
+            }, onClose: { isMeasuring = false })
+        }
+        #endif
     }
 }
 

@@ -144,12 +144,12 @@ struct FurnitureEditView: View {
                 }
             }
             Section("寸法（正面から見た向き）") {
-                NumberField(title: "幅 (cm)", value: $furniture.width)
-                NumberField(title: "奥行き (cm)", value: $furniture.depth)
-                NumberField(title: "高さ (cm)", value: $furniture.height)
+                NumberField(title: "幅 (cm)", value: $furniture.width, measures: true)
+                NumberField(title: "奥行き (cm)", value: $furniture.depth, measures: true)
+                NumberField(title: "高さ (cm)", value: $furniture.height, measures: true)
             }
             Section {
-                NumberField(title: "正面に空けたい距離 (cm)", value: $furniture.frontClearance)
+                NumberField(title: "正面に空けたい距離 (cm)", value: $furniture.frontClearance, measures: true)
                 Toggle("壁際に置きたい", isOn: $furniture.prefersWall)
             } footer: {
                 Text("引き出しや椅子を引く分など、家具の前に空けておきたい距離です")

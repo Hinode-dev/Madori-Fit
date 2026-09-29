@@ -26,7 +26,7 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        NSCameraUsageDescription: 部屋のスキャンと、家具を実寸で重ねて見るAR表示のために、カメラを使用します。
+        NSCameraUsageDescription: 部屋のスキャン、家具を実寸で重ねて見るAR表示、寸法の計測のために、カメラを使用します。
         ITSAppUsesNonExemptEncryption: false
     entitlements:
       path: Config/MadoriFit.entitlements
