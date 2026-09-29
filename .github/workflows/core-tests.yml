@@ -1,0 +1,19 @@
+name: MadoriCore tests
+
+on:
+  push:
+    paths:
+      - "MadoriCore/**"
+      - ".github/workflows/core-tests.yml"
+  pull_request:
+    paths:
+      - "MadoriCore/**"
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: swift test
+        working-directory: MadoriCore
+        run: swift test
