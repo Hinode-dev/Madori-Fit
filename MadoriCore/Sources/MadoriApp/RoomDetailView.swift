@@ -27,13 +27,6 @@ extension LayoutPreference {
     }
 }
 
-extension RoomRecord {
-    /// 寸法の編集画面に見せる写真。
-    var referencePhotos: [ReferencePhoto] {
-        sortedPhotos.map { ReferencePhoto(id: $0.uid, side: $0.side, data: $0.imageData) }
-    }
-}
-
 struct RoomDetailView: View {
     @Bindable var record: RoomRecord
     @State private var isEditingRoom = false
@@ -42,7 +35,6 @@ struct RoomDetailView: View {
     var body: some View {
         Form {
             roomSection
-            RoomPhotosSection(record: record)
             furnitureSection
             conditionsSection
             Section {
@@ -80,7 +72,7 @@ struct RoomDetailView: View {
     private var editRoomSheet: some View {
         if let draft = RoomDraft(room: record.room) {
             NavigationStack {
-                RoomEditorView(draft: draft, referencePhotos: record.referencePhotos) { room in
+                RoomEditorView(draft: draft) { room in
                     record.room = room
                     isEditingRoom = false
                 }

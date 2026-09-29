@@ -3,7 +3,7 @@ import MadoriCore
 
 extension WallSide {
     /// 図の上から見た位置での呼び名。
-    public var label: String {
+    var label: String {
         switch self {
         case .south: return "下"
         case .east: return "右"
@@ -21,18 +21,13 @@ extension WallSide {
 public struct RoomEditorView: View {
     @State private var draft: RoomDraft
     private let notices: [String]
-    private let referencePhotos: [ReferencePhoto]
     private let onSave: (Room) -> Void
 
-    /// - Parameters:
-    ///   - notices: スキャン結果の近似など、最初に見てほしい注意書き。
-    ///   - referencePhotos: 寸法を見直すときに見る写真。画面の上に固定して表示する。
+    /// - Parameter notices: スキャン結果の近似など、最初に見てほしい注意書き。
     public init(draft: RoomDraft = RoomDraft(), notices: [String] = [],
-                referencePhotos: [ReferencePhoto] = [],
                 onSave: @escaping (Room) -> Void) {
         _draft = State(initialValue: draft)
         self.notices = notices
-        self.referencePhotos = referencePhotos
         self.onSave = onSave
     }
 
@@ -88,11 +83,6 @@ public struct RoomEditorView: View {
             Section {
                 Button("保存") { onSave(draft.makeRoom()) }
                     .disabled(!draft.issues.isEmpty)
-            }
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if !referencePhotos.isEmpty {
-                ReferencePhotoStrip(photos: referencePhotos)
             }
         }
     }
