@@ -20,6 +20,9 @@ targets:
       path: Config/Info.plist
       properties:
         CFBundleDisplayName: Madori Fit
+        # XcodeGen の既定値 (1 / 1.0) で固定されないよう、ビルド設定を参照する。
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait

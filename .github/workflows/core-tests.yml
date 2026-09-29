@@ -49,6 +49,14 @@ jobs:
         run: |
           brew install xcodegen
           xcodegen generate
+      - name: Info.plist がビルド設定のバージョンを参照しているか確認
+        run: |
+          build=$(plutil -extract CFBundleVersion raw Config/Info.plist)
+          short=$(plutil -extract CFBundleShortVersionString raw Config/Info.plist)
+          echo "CFBundleVersion=$build"
+          echo "CFBundleShortVersionString=$short"
+          [ "$build" = '$(CURRENT_PROJECT_VERSION)' ] || { echo "::error::CFBundleVersion がビルド設定を参照していません"; exit 1; }
+          [ "$short" = '$(MARKETING_VERSION)' ] || { echo "::error::CFBundleShortVersionString がビルド設定を参照していません"; exit 1; }
       - name: xcodebuild (シミュレータ向け、署名なし)
         run: >
           xcodebuild build
