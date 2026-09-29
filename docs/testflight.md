@@ -2,7 +2,7 @@
 
 `v` から始まるタグ（例: `v1.0.0`）を push するか、Actions 画面の「TestFlight」を手動実行すると、
 テスト → アーカイブ → App Store Connect へのアップロードまで自動で行う。
-ビルド番号は、GitHub Actions の実行番号（`github.run_number`）を使う。
+ビルド番号は、実行時の日時 (UTC、`202609291414` のような形式) を使う。実行し直しても、常に前回より大きくなる。
 Xcode プロジェクトは `project.yml` から XcodeGen で生成する（リポジトリには入れない）。
 
 ## 最初に一度だけやること
@@ -42,6 +42,6 @@ git push origin v1.0.0
 
 - **`No profiles for ... were found` / 証明書の作成に失敗**: API キーの権限が Admin か確認する。
 - **`Cloud signing permission error`**: 同上。アカウントの Account Holder が、API キーの利用を許可しているか確認する。
-- **`The bundle version must be higher`**: ビルド番号は実行番号なので、通常は増え続ける。ワークフローを作り直した場合は、`BUILD_NUMBER` の起点を見直す。
+- **`The bundle version must be higher`**: ビルド番号は日時なので、通常は増え続ける。以前に大きな番号（例: 未来の日時）で上げてしまった場合は、それより大きくなるまで待つか、`MARKETING_VERSION` を上げる。
 - **アイコン関連のエラー**: `App/Assets.xcassets/AppIcon.appiconset/icon-1024.png` は仮のアイコン。差し替えるときは、透過なしの 1024×1024 の PNG にする。
 - **プライバシー関連の警告**: 使っているフレームワークによっては、プライバシーマニフェストが必要になる場合がある。メールの指示に従って追加する。

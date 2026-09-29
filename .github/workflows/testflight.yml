@@ -17,7 +17,6 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-      BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,6 +28,10 @@ jobs:
               exit 1
             fi
           done
+
+      - name: ビルド番号を決める
+        # 日時 (UTC) を使う。実行し直しても、常に前回より大きくなる。
+        run: echo "BUILD_NUMBER=$(date -u +%Y%m%d%H%M)" >> "$GITHUB_ENV"
 
       - name: Xcode 26 以降を選択
         # App Store Connect は Xcode 26 以降 (iOS 26 SDK 以降) でビルドしたアプリだけを受け付ける。
