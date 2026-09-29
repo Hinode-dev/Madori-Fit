@@ -30,3 +30,10 @@
 登録済み: iCloud / Push Notifications / In-App Purchase / Data Protection。
 Push Notifications は、サーバーを持たないため、SwiftData の CloudKit 同期を使う場合にのみ意味がある。
 Info.plist には `NSCameraUsageDescription`（スキャン）と `NSPhotoLibraryAddUsageDescription`（画像の書き出し）が必要になる。
+
+## スキャン（LiDAR 搭載機）
+
+RoomPlan でスキャンし、壁の向きから傾きを求めて、外周を囲む四角い部屋に近似する（`RoomFitter`）。
+結果は手入力と同じ入力画面に出るので、寸法・ドア・窓を確認して補正できる。
+L 字など四角くない部屋は、近似したことを画面に注意書きで出す。
+`Info.plist` に `NSCameraUsageDescription` が必要。

@@ -20,15 +20,26 @@ extension WallSide {
 /// 寸法の手入力で、四角い部屋とドア・窓を作る画面。
 public struct RoomEditorView: View {
     @State private var draft: RoomDraft
+    private let notices: [String]
     private let onSave: (Room) -> Void
 
-    public init(draft: RoomDraft = RoomDraft(), onSave: @escaping (Room) -> Void) {
+    /// - Parameter notices: スキャン結果の近似など、最初に見てほしい注意書き。
+    public init(draft: RoomDraft = RoomDraft(), notices: [String] = [],
+                onSave: @escaping (Room) -> Void) {
         _draft = State(initialValue: draft)
+        self.notices = notices
         self.onSave = onSave
     }
 
     public var body: some View {
         Form {
+            if !notices.isEmpty {
+                Section("スキャン結果について") {
+                    ForEach(notices, id: \.self) { notice in
+                        Label(notice, systemImage: "info.circle")
+                    }
+                }
+            }
             Section("部屋") {
                 TextField("名前（例: 洋室）", text: $draft.name)
                 NumberField(title: "幅 (cm)", value: $draft.width)

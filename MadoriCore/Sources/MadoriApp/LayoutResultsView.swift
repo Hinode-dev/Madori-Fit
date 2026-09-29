@@ -36,7 +36,7 @@ struct LayoutResultsView: View {
             let generator = LayoutGenerator(room: room, furniture: furniture, conditions: conditions)
             let currentSeed = seed
             layouts = await Task.detached(priority: .userInitiated) {
-                generator.generate(count: 3, seed: currentSeed)
+                generator.generate(count: 3, seed: currentSeed, attempts: 600)
             }.value
         }
     }

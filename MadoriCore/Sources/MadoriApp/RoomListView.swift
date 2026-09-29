@@ -7,6 +7,7 @@ struct RoomListView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \RoomRecord.updatedAt, order: .reverse) private var rooms: [RoomRecord]
     @State private var isAdding = false
+    @State private var isScanning = false
 
     var body: some View {
         List {
@@ -28,10 +29,30 @@ struct RoomListView: View {
         .navigationTitle("部屋")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("部屋を追加", systemImage: "plus") { isAdding = true }
+                Menu {
+                    Button("寸法を入力", systemImage: "ruler") { isAdding = true }
+                    #if canImport(RoomPlan) && os(iOS)
+                    if RoomScanSupport.isAvailable {
+                        Button("スキャンして作成", systemImage: "camera.viewfinder") { isScanning = true }
+                    }
+                    #endif
+                } label: {
+                    Label("部屋を追加", systemImage: "plus")
+                }
             }
         }
         .navigationDestination(for: RoomRecord.self) { RoomDetailView(record: $0) }
+        .sheet(isPresented: $isScanning) {
+            #if canImport(RoomPlan) && os(iOS)
+            RoomScanFlow(
+                onSave: { room in
+                    context.insert(RoomRecord(room: room))
+                    isScanning = false
+                },
+                onCancel: { isScanning = false }
+            )
+            #endif
+        }
         .sheet(isPresented: $isAdding) {
             NavigationStack {
                 RoomEditorView { room in

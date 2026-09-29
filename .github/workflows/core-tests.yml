@@ -17,3 +17,16 @@ jobs:
       - name: swift test
         working-directory: MadoriCore
         run: swift test
+
+  ios-build:
+    # macOS 向けのビルドでは除外される iOS 専用コード（RoomPlan によるスキャン）をビルドで確認する。
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: xcodebuild (iOS)
+        working-directory: MadoriCore
+        run: >
+          xcodebuild build
+          -scheme MadoriApp
+          -destination 'generic/platform=iOS'
+          CODE_SIGNING_ALLOWED=NO
