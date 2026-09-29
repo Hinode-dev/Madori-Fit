@@ -50,15 +50,11 @@ public struct RoomEditorView: View {
                 }
             }
 
-            if draft.isSizeValid {
-                Section("プレビュー") {
-                    LayoutPlanView(room: draft.makeRoom(), showsClearance: false, showsLabels: false)
-                        .frame(maxHeight: 280)
-                    if !draft.hasDoor {
-                        Text("ドアを追加すると、通路が確保できるかも確認できます")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
+            if !draft.hasDoor && draft.isSizeValid {
+                Section {
+                    Text("ドアを追加すると、通路が確保できるかも確認できます")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -85,6 +81,50 @@ public struct RoomEditorView: View {
                     .disabled(!draft.issues.isEmpty)
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if draft.isSizeValid {
+                EditorPreviewPane(draft: $draft)
+            }
+        }
+    }
+}
+
+/// 編集画面の上に固定する、部屋のプレビュー。3D では印をつかんで寸法を動かせる。
+private struct EditorPreviewPane: View {
+    enum Mode: String, CaseIterable {
+        case threeD = "3D"
+        case plan = "平面図"
+    }
+
+    @Binding var draft: RoomDraft
+    @State private var mode: Mode = .threeD
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Picker("表示", selection: $mode) {
+                ForEach(Mode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+
+            Group {
+                switch mode {
+                case .threeD:
+                    RoomEditor3DView(draft: $draft)
+                        .frame(height: 260)
+                case .plan:
+                    LayoutPlanView(room: draft.makeRoom(), showsClearance: false, showsLabels: false)
+                        .frame(height: 260)
+                }
+            }
+            if mode == .threeD {
+                Text("丸い印をドラッグして、幅・奥行き・高さ・ドアや窓の位置を変えられます")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 8)
+        .background(.bar)
     }
 }
 

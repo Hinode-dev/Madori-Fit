@@ -25,17 +25,39 @@ public struct LayoutGalleryView: View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(Array(layouts.enumerated()), id: \.element.id) { index, layout in
-                    card(index: index, layout: layout)
+                    LayoutCard(room: room, layout: layout, index: index)
                 }
             }
             .padding(16)
         }
     }
+}
 
-    private func card(index: Int, layout: MadoriCore.Layout) -> some View {
+private struct LayoutCard: View {
+    let room: Room
+    let layout: MadoriCore.Layout
+    let index: Int
+    @State private var isThreeD = false
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("案 \(index + 1)").font(.headline)
-            LayoutPlanView(room: room, layout: layout)
+            HStack {
+                Text("案 \(index + 1)").font(.headline)
+                Spacer()
+                Picker("表示", selection: $isThreeD) {
+                    Text("平面図").tag(false)
+                    Text("3D").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 160)
+            }
+            if isThreeD {
+                Layout3DView(room: room, layout: layout)
+                    .frame(height: 300)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                LayoutPlanView(room: room, layout: layout)
+            }
             if layout.issues.isEmpty {
                 Label("問題なし", systemImage: "checkmark.circle").foregroundStyle(.green)
             } else {
