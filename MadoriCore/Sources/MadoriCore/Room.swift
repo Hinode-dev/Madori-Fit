@@ -83,11 +83,17 @@ public struct Room: Identifiable, Codable, Hashable, Sendable {
         Wall(start: corners[index], end: corners[(index + 1) % corners.count])
     }
 
+    /// 開口部が壁に沿って占める両端の点。
+    public func span(of opening: Opening) -> (start: Point, end: Point) {
+        let w = wall(opening.wallIndex)
+        let a = w.start + w.tangent * opening.offset
+        return (a, a + w.tangent * opening.width)
+    }
+
     /// 開口部の前に空けておく領域。ドアは開閉スペース（幅×幅）、窓は 20cm の帯。
     public func zone(for opening: Opening) -> Rect {
         let w = wall(opening.wallIndex)
-        let a = w.start + w.tangent * opening.offset
-        let b = a + w.tangent * opening.width
+        let (a, b) = span(of: opening)
         let depth = opening.kind == .door ? opening.width : 20.0
         let n = w.inwardNormal * depth
         return Rect(covering: [a, b, a + n, b + n])
