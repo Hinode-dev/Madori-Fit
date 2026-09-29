@@ -60,7 +60,10 @@ public struct RoomEditorView: View {
 
             Section("ドア・窓") {
                 ForEach($draft.openings) { $opening in
-                    OpeningRow(opening: $opening)
+                    let id = opening.id
+                    OpeningRow(opening: $opening) {
+                        draft.openings.removeAll { $0.id == id }
+                    }
                 }
                 .onDelete { draft.openings.remove(atOffsets: $0) }
                 Button("ドアを追加") { draft.addOpening(kind: .door) }
@@ -130,12 +133,24 @@ private struct EditorPreviewPane: View {
 
 struct OpeningRow: View {
     @Binding var opening: OpeningDraft
+    let onDelete: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(opening.kind == .door ? "ドア" : "窓",
-                  systemImage: opening.kind == .door ? "door.left.hand.closed" : "window.horizontal")
-                .font(.headline)
+            HStack {
+                Label(opening.kind == .door ? "ドア" : "窓",
+                      systemImage: opening.kind == .door ? "door.left.hand.closed" : "window.horizontal")
+                    .font(.headline)
+                Spacer()
+                Button("削除", systemImage: "trash", role: .destructive, action: onDelete)
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.borderless)
+            }
+            Picker("種類", selection: $opening.kind) {
+                Text("ドア").tag(Opening.Kind.door)
+                Text("窓").tag(Opening.Kind.window)
+            }
+            .pickerStyle(.segmented)
             Picker("壁", selection: $opening.side) {
                 ForEach(WallSide.allCases, id: \.self) { side in
                     Text(side.label).tag(side)

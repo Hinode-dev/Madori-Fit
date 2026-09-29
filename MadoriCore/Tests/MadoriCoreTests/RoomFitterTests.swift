@@ -75,3 +75,60 @@ final class RoomFitterTests: XCTestCase {
         XCTAssertNil(RoomFitter.fit(ScannedRoom(surfaces: [])))
     }
 }
+
+final class RoomFitterCleanupTests: XCTestCase {
+    private func walls() -> [ScannedSurface] {
+        let half = Double.pi / 2
+        return [
+            ScannedSurface(kind: .wall, center: Point(x: 200, y: 0), angle: 0, width: 400),
+            ScannedSurface(kind: .wall, center: Point(x: 400, y: 150), angle: half, width: 300),
+            ScannedSurface(kind: .wall, center: Point(x: 200, y: 300), angle: 0, width: 400),
+            ScannedSurface(kind: .wall, center: Point(x: 0, y: 150), angle: half, width: 300)
+        ]
+    }
+
+    func testDoorAndOpeningAtSamePlaceAreMerged() throws {
+        var surfaces = walls()
+        surfaces.append(ScannedSurface(kind: .door, center: Point(x: 100, y: 0), angle: 0, width: 90))
+        surfaces.append(ScannedSurface(kind: .opening, center: Point(x: 105, y: 0), angle: 0, width: 95))
+        let fit = try XCTUnwrap(RoomFitter.fit(ScannedRoom(surfaces: surfaces)))
+        XCTAssertEqual(fit.draft.openings.count, 1)
+        XCTAssertEqual(fit.draft.openings[0].kind, .door)
+        XCTAssertTrue(fit.warnings.contains { $0.contains("まとめました") })
+        XCTAssertTrue(fit.draft.issues.isEmpty, "\(fit.draft.issues)")
+    }
+
+    func testSeparateOpeningsAreKept() throws {
+        var surfaces = walls()
+        surfaces.append(ScannedSurface(kind: .door, center: Point(x: 60, y: 0), angle: 0, width: 80))
+        surfaces.append(ScannedSurface(kind: .window, center: Point(x: 250, y: 300), angle: 0, width: 150,
+                                       bottomHeight: 90))
+        let fit = try XCTUnwrap(RoomFitter.fit(ScannedRoom(surfaces: surfaces)))
+        XCTAssertEqual(fit.draft.openings.count, 2)
+        XCTAssertFalse(fit.warnings.contains { $0.contains("まとめました") })
+    }
+
+    func testTinyDetectionsAreIgnored() throws {
+        var surfaces = walls()
+        surfaces.append(ScannedSurface(kind: .door, center: Point(x: 100, y: 0), angle: 0, width: 30))
+        surfaces.append(ScannedSurface(kind: .window, center: Point(x: 250, y: 300), angle: 0, width: 20))
+        let fit = try XCTUnwrap(RoomFitter.fit(ScannedRoom(surfaces: surfaces)))
+        XCTAssertTrue(fit.draft.openings.isEmpty)
+    }
+}
+
+final class RoomOpeningEditTests: XCTestCase {
+    func testRemoveAndChangeKind() {
+        let door = Opening(kind: .door, wallIndex: 0, offset: 20, width: 80)
+        let window = Opening(kind: .window, wallIndex: 2, offset: 60, width: 150)
+        var room = Room.rectangle(width: 300, depth: 400, openings: [door, window])
+
+        room.setKind(.window, ofOpening: door.id)
+        XCTAssertEqual(room.openings[0].kind, .window)
+        room.setKind(.door, ofOpening: UUID())                       // 存在しない ID は無視
+        XCTAssertEqual(room.openings.count, 2)
+
+        room.removeOpening(id: door.id)
+        XCTAssertEqual(room.openings.map(\.id), [window.id])
+    }
+}

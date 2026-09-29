@@ -136,3 +136,23 @@ final class RoomSceneBuilderTests: XCTestCase {
         XCTAssertEqual(count, 1)
     }
 }
+
+final class OpeningLabelTests: XCTestCase {
+    func testLabelsSitAboveEachOpening() throws {
+        let door = Opening(kind: .door, wallIndex: 0, offset: 50, width: 80)
+        let window = Opening(kind: .window, wallIndex: 2, offset: 60, width: 150, sillHeight: 90)
+        let room = Room.rectangle(width: 300, depth: 400, openings: [door, window])
+        let specs = RoomHandles.labelSpecs(for: room)
+        XCTAssertEqual(specs.count, 2)
+
+        let d = try XCTUnwrap(specs.first { $0.kind == .opening(door.id) })
+        XCTAssertEqual(d.plan.x, 90, accuracy: 0.001)         // 50 + 80/2
+        XCTAssertEqual(d.plan.y, 0, accuracy: 0.001)
+        XCTAssertEqual(d.elevation, 215, accuracy: 0.001)     // ドアの高さ 200 + 15
+
+        let w = try XCTUnwrap(specs.first { $0.kind == .opening(window.id) })
+        XCTAssertEqual(w.plan.x, 165, accuracy: 0.001)        // 上の壁は右から: 300 - (60 + 75)
+        XCTAssertEqual(w.plan.y, 400, accuracy: 0.001)
+        XCTAssertEqual(w.elevation, 215, accuracy: 0.001)     // 下端 90 + 窓の高さ 110 + 15
+    }
+}

@@ -35,6 +35,8 @@ struct RoomDetailView: View {
     @State private var isAddingFurniture = false
     @State private var isConfirmingDelete = false
     @State private var isDeleting = false
+    @State private var showsPlan = false
+    @State private var selectedOpening: Opening?
 
     var body: some View {
         Group {
@@ -128,12 +130,47 @@ struct RoomDetailView: View {
     // MARK: 部屋
 
     private var roomSection: some View {
-        Section("部屋") {
-            LayoutPlanView(room: record.room, showsClearance: false, showsLabels: false)
-                .frame(maxHeight: 240)
+        Section {
+            Picker("表示", selection: $showsPlan) {
+                Text("3D").tag(false)
+                Text("平面図").tag(true)
+            }
+            .pickerStyle(.segmented)
+            if showsPlan {
+                LayoutPlanView(room: record.room, showsClearance: false, showsLabels: false,
+                               showsDimensions: true)
+                    .frame(maxHeight: 300)
+            } else {
+                Room3DView(room: record.room) { selectedOpening = $0 }
+                    .frame(height: 300)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
             if RoomDraft(room: record.room) != nil {
                 Button("寸法・ドア・窓を編集") { isEditingRoom = true }
             }
+        } header: {
+            Text("部屋")
+        } footer: {
+            Text("指で回転・拡大できます。ドアや窓のラベルをタップすると、種類の変更や削除ができます。")
+        }
+        .confirmationDialog(
+            selectedOpening.map { $0.kind == .door ? "ドア（幅 \(Int($0.width)) cm）" : "窓（幅 \(Int($0.width)) cm）" } ?? "",
+            isPresented: Binding(get: { selectedOpening != nil }, set: { if !$0 { selectedOpening = nil } }),
+            titleVisibility: .visible,
+            presenting: selectedOpening
+        ) { opening in
+            Button(opening.kind == .door ? "窓に変更" : "ドアに変更") {
+                var room = record.room
+                room.setKind(opening.kind == .door ? .window : .door, ofOpening: opening.id)
+                record.room = room
+            }
+            Button("削除", role: .destructive) {
+                var room = record.room
+                room.removeOpening(id: opening.id)
+                record.room = room
+            }
+        } message: { _ in
+            Text("スキャンで、ドアや窓でない場所が検出されたときに直せます。")
         }
     }
 

@@ -99,6 +99,17 @@ public struct Room: Identifiable, Codable, Hashable, Sendable {
         return Rect(covering: [a, b, a + n, b + n])
     }
 
+    /// ドア・窓を消す。
+    public mutating func removeOpening(id: UUID) {
+        openings.removeAll { $0.id == id }
+    }
+
+    /// ドアと窓を入れ替える（誤検出の直しに使う）。
+    public mutating func setKind(_ kind: Opening.Kind, ofOpening id: UUID) {
+        guard let i = openings.firstIndex(where: { $0.id == id }) else { return }
+        openings[i].kind = kind
+    }
+
     public func contains(_ point: Point) -> Bool {
         Polygon.contains(point, in: corners)
     }

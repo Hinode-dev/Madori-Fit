@@ -63,6 +63,19 @@ enum RoomHandles {
         return result
     }
 
+    /// 3D の上に、ドア・窓の名前を出すための位置。開口部の少し上に置く。
+    static func labelSpecs(for room: Room) -> [HandleSpec] {
+        room.openings.map { o in
+            let (a, b) = room.span(of: o)
+            let top = o.kind == .door
+                ? RoomSceneBuilder.doorHeight
+                : o.sillHeight + RoomSceneBuilder.windowHeight
+            return HandleSpec(kind: .opening(o.id),
+                              plan: Point(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2),
+                              elevation: top + 15, axis: Axis3(x: 1, y: 0, z: 0))
+        }
+    }
+
     /// 印が今動かしている値 (cm)。
     static func value(of kind: HandleKind, in draft: RoomDraft) -> Double? {
         switch kind {

@@ -48,6 +48,8 @@ public struct RoomFit: Sendable {
 public enum RoomFitter {
     /// 壁が長方形の辺からこれ以上離れていたら、四角くない部屋とみなす (cm)。
     static let edgeTolerance = 30.0
+    static let minDoorWidth = 50.0
+    static let minWindowWidth = 30.0
 
     public static func fit(_ scan: ScannedRoom, name: String = "") -> RoomFit? {
         let walls = scan.surfaces.filter { $0.kind == .wall && $0.width > 0 }
@@ -99,7 +101,10 @@ public enum RoomFitter {
             warnings.append("部屋が四角ではない可能性があります。外周を囲む長方形に近似したので、形を確認してください")
         }
 
+        var mergedCount = 0
         for s in scan.surfaces where s.kind != .wall {
+            // 小さすぎる検出は、ドア・窓ではない。
+            guard s.width >= (s.kind == .window ? minWindowWidth : minDoorWidth) else { continue }
             let c = rotate(s.center)
             let distances: [(WallSide, Double)] = [
                 (.south, abs(c.y - box.minY)), (.north, abs(c.y - box.maxY)),
@@ -113,12 +118,26 @@ public enum RoomFitter {
                 ? c.x - box.minX - s.width / 2
                 : c.y - box.minY - s.width / 2
             let offset = min(max(raw.rounded(), 0), max(length - width, 0))
+
+            // 同じ場所を、ドアと出入り口の両方として検出することがある。先に見つけたほうだけ残す。
+            let overlaps = draft.openings.contains { other in
+                guard other.side == side else { return false }
+                let overlap = min(offset + width, other.offset + other.width) - max(offset, other.offset)
+                return overlap > 0.5 * min(width, other.width)
+            }
+            if overlaps {
+                mergedCount += 1
+                continue
+            }
             draft.openings.append(OpeningDraft(
                 kind: s.kind == .window ? .window : .door,
                 side: side, offset: offset, width: width,
                 sillHeight: s.kind == .window ? max(s.bottomHeight.rounded(), 0) : 90))
         }
 
+        if mergedCount > 0 {
+            warnings.append("重なって検出されたドア・窓を \(mergedCount) 件まとめました。違う場合は、部屋の画面から直せます")
+        }
         if !draft.hasDoor {
             warnings.append("ドアや出入り口が見つかりませんでした。必要なら追加してください")
         }
