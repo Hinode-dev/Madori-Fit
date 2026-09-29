@@ -6,7 +6,17 @@
 ## 構成
 
 - `MadoriCore/` — UI・iOS API に依存しない Swift Package。間取り・家具のモデルと配置生成ロジック。`swift test` で単体テストできる。
-- （今後）アプリ本体 — SwiftUI、RoomPlan によるスキャン、SwiftData、StoreKit 2。
+- `MadoriUI`（同じパッケージ内）— 配置案の 2D 表示、部屋の寸法入力画面。
+- `MadoriApp`（同じパッケージ内）— アプリの画面一式と SwiftData での保存。部屋一覧 → 部屋の詳細（家具・条件）→ 配置案。
+- `App/MadoriFitApp.swift` — Xcode のアプリターゲットに置く唯一のファイル。
+- （今後）RoomPlan によるスキャン、StoreKit 2。
+
+## Xcode プロジェクトの作り方
+
+1. Xcode で iOS App（SwiftUI）を新規作成する。最低 iOS 17。Storage は None。
+2. File > Add Package Dependencies > Add Local… で `MadoriCore` フォルダを選び、`MadoriApp` をアプリターゲットに追加する。
+3. 自動生成された `〜App.swift` と `ContentView.swift` を消し、`App/MadoriFitApp.swift` をターゲットに追加する。
+4. Signing & Capabilities に、iCloud / In-App Purchase / Data Protection を追加する。
 
 ## MadoriCore の流れ
 
