@@ -94,3 +94,24 @@ final class SavedLayoutTests: XCTestCase {
         XCTAssertEqual(saved.room.bounds.width, 270)
     }
 }
+
+final class FurnitureUndoTests: XCTestCase {
+    /// 取り消しは、同じ名前のうち最後に追加したものだけを消す。
+    func testUndoRemovesOnlyTheLastOfThatName() throws {
+        let record = RoomRecord(room: Room.rectangle(width: 270, depth: 360))
+        let bed = try XCTUnwrap(FurniturePresets.preset(named: "シングルベッド"))
+        var first = bed
+        first.id = UUID()
+        var second = bed
+        second.id = UUID()
+        let desk = try XCTUnwrap(FurniturePresets.preset(named: "デスク"))
+        record.furniture = [first, desk, second]
+
+        var list = record.furniture
+        if let i = list.lastIndex(where: { $0.name == "シングルベッド" }) {
+            list.remove(at: i)
+            record.furniture = list
+        }
+        XCTAssertEqual(record.furniture.map(\.id), [first.id, desk.id])
+    }
+}

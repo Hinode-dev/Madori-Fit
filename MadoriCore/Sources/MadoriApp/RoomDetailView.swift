@@ -85,7 +85,7 @@ struct RoomDetailView: View {
         .sheet(isPresented: $isEditingRoom) { editRoomSheet }
         .sheet(isPresented: $isAddingFurniture) {
             NavigationStack {
-                FurniturePickerView(addedCount: record.furniture.count) { add($0) }
+                FurniturePickerView(added: record.furniture, onAdd: { add($0) }, onUndo: { undoAdd(named: $0) })
             }
         }
     }
@@ -221,6 +221,15 @@ struct RoomDetailView: View {
         var copy = furniture
         copy.id = UUID()   // プリセットは同じ ID を持つので、追加のたびに付け直す
         record.furniture = record.furniture + [copy]
+    }
+
+    /// 同じ名前の家具のうち、最後に追加したものを消す。
+    private func undoAdd(named name: String) {
+        var list = record.furniture
+        if let i = list.lastIndex(where: { $0.name == name }) {
+            list.remove(at: i)
+            record.furniture = list
+        }
     }
 
     private func replace(_ furniture: Furniture) {

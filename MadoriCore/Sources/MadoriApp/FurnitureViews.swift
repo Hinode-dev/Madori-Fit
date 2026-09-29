@@ -3,10 +3,23 @@ import MadoriCore
 import MadoriUI
 
 /// プリセットから家具を選ぶ。選んだ家具は何個でも追加できる。
+///
+/// 追加したことが分かるように、行に追加済みの個数を出し、触覚と、画面下のメッセージ（取り消せる）で知らせる。
 struct FurniturePickerView: View {
-    let addedCount: Int
+    /// 今の部屋にある家具。行ごとの追加済みの個数を数えるのに使う。
+    let added: [Furniture]
     let onAdd: (Furniture) -> Void
+    /// 同じ名前の家具のうち、最後に追加したものを取り消す。
+    let onUndo: (String) -> Void
+
     @Environment(\.dismiss) private var dismiss
+    @State private var toast: Toast?
+    @State private var flashName: String?
+
+    private struct Toast: Equatable {
+        let id = UUID()
+        let name: String
+    }
 
     var body: some View {
         List {
@@ -14,28 +27,17 @@ struct FurniturePickerView: View {
                 NavigationLink("自分で寸法を入力") {
                     FurnitureEditView(
                         furniture: Furniture(name: "", category: .other, width: 100, depth: 50, height: 70)
-                    ) { onAdd($0) }
+                    ) { add($0) }
                 }
             } footer: {
-                Text("追加済み: \(addedCount) 点")
+                Text("追加済み: \(added.count) 点")
             }
             ForEach(FurnitureCategory.allCases, id: \.self) { category in
                 let items = FurniturePresets.all.filter { $0.category == category }
                 if !items.isEmpty {
                     Section(category.label) {
                         ForEach(items) { item in
-                            Button {
-                                onAdd(item)
-                            } label: {
-                                HStack {
-                                    Text(item.name)
-                                    Spacer()
-                                    Text(String(format: "%.0f × %.0f × %.0f", item.width, item.depth, item.height))
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            .foregroundStyle(.primary)
+                            row(item)
                         }
                     }
                 }
@@ -46,6 +48,71 @@ struct FurniturePickerView: View {
             ToolbarItem(placement: .confirmationAction) {
                 Button("完了") { dismiss() }
             }
+        }
+        .overlay(alignment: .bottom) {
+            if let toast {
+                toastView(toast)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .sensoryFeedback(.success, trigger: toast)
+    }
+
+    private func row(_ item: Furniture) -> some View {
+        let count = added.filter { $0.name == item.name }.count
+        return Button {
+            add(item)
+        } label: {
+            HStack {
+                Text(item.name)
+                if count > 0 {
+                    Text("×\(count)")
+                        .font(.caption.bold())
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(Color.accentColor, in: Capsule())
+                        .foregroundStyle(.white)
+                        .transition(.scale.combined(with: .opacity))
+                }
+                Spacer()
+                Text(String(format: "%.0f × %.0f × %.0f", item.width, item.depth, item.height))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .foregroundStyle(.primary)
+        .listRowBackground(flashName == item.name ? Color.accentColor.opacity(0.25) : nil)
+        .animation(.spring(duration: 0.3), value: count)
+    }
+
+    private func toastView(_ toast: Toast) -> some View {
+        HStack(spacing: 12) {
+            Label("\(toast.name)を追加しました", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.white)
+            Button("取り消す") {
+                onUndo(toast.name)
+                withAnimation { self.toast = nil }
+            }
+            .font(.subheadline.bold())
+            .foregroundStyle(.yellow)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.black.opacity(0.85), in: Capsule())
+        .padding(.bottom, 16)
+    }
+
+    private func add(_ furniture: Furniture) {
+        onAdd(furniture)
+        let current = Toast(name: furniture.name)
+        withAnimation(.spring(duration: 0.3)) { toast = current }
+        flashName = furniture.name
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            withAnimation { if flashName == furniture.name { flashName = nil } }
+            try? await Task.sleep(for: .milliseconds(2400))
+            // 後から追加した分のメッセージを消さないように、自分のものだけ消す。
+            withAnimation { if toast == current { toast = nil } }
         }
     }
 }
