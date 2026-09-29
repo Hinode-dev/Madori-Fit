@@ -110,21 +110,56 @@ final class RoomSceneBuilderTests: XCTestCase {
         XCTAssertEqual(names(node, "glass"), 1)
     }
 
-    func testFurnitureBoxesMatchFootprintAndHeight() throws {
-        let bed = Furniture(name: "bed", category: .bed, width: 100, depth: 200, height: 40)
+    /// 家具は、1 つの箱ではなく、複数の部品でできたモデルになる。
+    func testFurnitureIsBuiltFromSeveralParts() throws {
+        let bed = try XCTUnwrap(FurniturePresets.preset(named: "シングルベッド"))
         let item = PlacedFurniture(furniture: bed, center: Point(x: 50, y: 100), quarterTurns: 0)
         let room = Room.rectangle(width: 300, depth: 400)
         let node = RoomSceneBuilder.contentNode(room: room, items: [item])
 
         let furniture = try XCTUnwrap(node.childNodes(passingTest: { n, _ in n.name == "furniture" }).first)
-        let box = try XCTUnwrap(furniture.geometry as? SCNBox)
-        XCTAssertEqual(Double(box.width), 100, accuracy: 0.001)
-        XCTAssertEqual(Double(box.height), 40, accuracy: 0.001)
-        XCTAssertEqual(Double(box.length), 200, accuracy: 0.001)
-        // 平面図の y は、シーンの -z。
+        XCTAssertGreaterThan(furniture.childNodes.count, 3)
+        // 平面図の y は、シーンの -z。床の高さに置く。
         XCTAssertEqual(Double(furniture.position.x), 50, accuracy: 0.001)
-        XCTAssertEqual(Double(furniture.position.y), 20, accuracy: 0.001)
+        XCTAssertEqual(Double(furniture.position.y), 0, accuracy: 0.001)
         XCTAssertEqual(Double(furniture.position.z), -100, accuracy: 0.001)
+    }
+
+    func testRotationTurnsTheFrontToTheRightDirection() throws {
+        let bed = try XCTUnwrap(FurniturePresets.preset(named: "シングルベッド"))
+        let room = Room.rectangle(width: 300, depth: 400)
+        // quarterTurns 1: 正面は平面図の -x 向き。シーンでも -x 向き（-z を y 軸まわりに 90° 回した向き）。
+        let item = PlacedFurniture(furniture: bed, center: Point(x: 150, y: 200), quarterTurns: 1)
+        let node = RoomSceneBuilder.contentNode(room: room, items: [item])
+        let furniture = try XCTUnwrap(node.childNodes(passingTest: { n, _ in n.name == "furniture" }).first)
+        let angle = Double(furniture.eulerAngles.y)
+        XCTAssertEqual(-sin(angle), -1, accuracy: 0.001)   // 正面 (0,0,-1) を回すと x 成分は -sin(angle)
+        XCTAssertEqual(-cos(angle), 0, accuracy: 0.001)
+    }
+
+    /// すべての部品が、家具の幅・奥行きの中に収まる（高さの飾りと、ドラムなどの円柱は除く）。
+    func testPartsStayInsideTheFootprint() throws {
+        let room = Room.rectangle(width: 500, depth: 500)
+        for preset in FurniturePresets.all {
+            let item = PlacedFurniture(furniture: preset, center: Point(x: 250, y: 250), quarterTurns: 0)
+            let node = RoomSceneBuilder.contentNode(room: room, items: [item])
+            let furniture = try XCTUnwrap(node.childNodes(passingTest: { n, _ in n.name == "furniture" }).first)
+            for part in furniture.childNodes {
+                guard let box = part.geometry as? SCNBox else { continue }
+                let halfW = Double(box.width) / 2
+                let halfL = Double(box.length) / 2
+                XCTAssertLessThanOrEqual(abs(Double(part.position.x)) + halfW, preset.width / 2 + 0.01,
+                                         "\(preset.name): 幅からはみ出している")
+                XCTAssertLessThanOrEqual(abs(Double(part.position.z)) + halfL, preset.depth / 2 + 0.01,
+                                         "\(preset.name): 奥行きからはみ出している")
+            }
+        }
+    }
+
+    func testEveryPresetGetsASpecificModel() {
+        for preset in FurniturePresets.all {
+            XCTAssertNotEqual(FurnitureModelKind.of(preset), .generic, "\(preset.name)")
+        }
     }
 
     func testControllerReplacesContentOnUpdate() {
@@ -154,5 +189,32 @@ final class OpeningLabelTests: XCTestCase {
         XCTAssertEqual(w.plan.x, 165, accuracy: 0.001)        // 上の壁は右から: 300 - (60 + 75)
         XCTAssertEqual(w.plan.y, 400, accuracy: 0.001)
         XCTAssertEqual(w.elevation, 215, accuracy: 0.001)     // 下端 90 + 窓の高さ 110 + 15
+    }
+}
+
+final class FurnitureModelKindTests: XCTestCase {
+    private func kind(_ name: String, _ category: FurnitureCategory, w: Double = 100, d: Double = 50,
+                      h: Double = 70) -> FurnitureModelKind {
+        FurnitureModelKind.of(Furniture(name: name, category: category, width: w, depth: d, height: h))
+    }
+
+    func testNameTakesPriority() {
+        XCTAssertEqual(kind("私のベッド", .other), .bed)
+        XCTAssertEqual(kind("ローテーブル", .table, h: 40), .lowTable)
+        XCTAssertEqual(kind("ダイニングテーブル", .table, h: 72), .table)
+        XCTAssertEqual(kind("本棚", .storage, h: 180, d: 30), .bookshelf)
+        XCTAssertEqual(kind("ワードローブ", .storage, h: 180, d: 55), .wardrobe)
+        XCTAssertEqual(kind("冷蔵庫", .appliance, h: 170), .fridge)
+        XCTAssertEqual(kind("洗濯機", .appliance, h: 100), .washer)
+    }
+
+    func testFallsBackToCategoryAndSize() {
+        XCTAssertEqual(kind("名無し", .table, h: 40), .lowTable)
+        XCTAssertEqual(kind("名無し", .table, h: 72), .table)
+        XCTAssertEqual(kind("名無し", .storage, h: 180, d: 30), .bookshelf)
+        XCTAssertEqual(kind("名無し", .storage, h: 180, d: 60), .wardrobe)
+        XCTAssertEqual(kind("名無し", .storage, h: 90), .chest)
+        XCTAssertEqual(kind("名無し", .appliance, h: 90), .washer)
+        XCTAssertEqual(kind("名無し", .other), .generic)
     }
 }

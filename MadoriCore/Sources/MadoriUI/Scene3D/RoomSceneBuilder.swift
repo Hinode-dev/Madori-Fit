@@ -55,14 +55,7 @@ enum RoomSceneBuilder {
         }
 
         for item in items {
-            let fp = item.footprint
-            let h = item.furniture.height
-            let box = SCNBox(width: CGFloat(fp.width), height: CGFloat(h), length: CGFloat(fp.height), chamferRadius: 1.5)
-            box.materials = [furnitureMaterial(item.furniture.category)]
-            let node = SCNNode(geometry: box)
-            node.name = "furniture"
-            node.position = vector(fp.center.x, h / 2, -fp.center.y)
-            root.addChildNode(node)
+            root.addChildNode(FurnitureModelBuilder.node(for: item))
         }
         return root
     }
@@ -120,7 +113,7 @@ enum RoomSceneBuilder {
         SCNVector3(x: SCNFloat(x), y: SCNFloat(y), z: SCNFloat(z))
     }
 
-    private static func material(_ r: Double, _ g: Double, _ b: Double, alpha: Double = 1) -> SCNMaterial {
+    static func material(_ r: Double, _ g: Double, _ b: Double, alpha: Double = 1) -> SCNMaterial {
         let m = SCNMaterial()
         m.diffuse.contents = CGColor(red: r, green: g, blue: b, alpha: 1)
         m.transparency = CGFloat(alpha)
@@ -133,16 +126,16 @@ enum RoomSceneBuilder {
     private static func wallMaterial() -> SCNMaterial { material(0.97, 0.97, 0.98, alpha: 0.5) }
     private static func glassMaterial() -> SCNMaterial { material(0.55, 0.85, 1.0, alpha: 0.35) }
 
-    static func furnitureMaterial(_ category: FurnitureCategory) -> SCNMaterial {
+    static func categoryColor(_ category: FurnitureCategory) -> (r: Double, g: Double, b: Double) {
         switch category {
-        case .bed: return material(0.35, 0.36, 0.85)
-        case .sofa: return material(0.20, 0.65, 0.65)
-        case .table: return material(0.62, 0.45, 0.30)
-        case .desk: return material(0.25, 0.50, 0.90)
-        case .storage: return material(0.30, 0.70, 0.40)
-        case .tv: return material(0.60, 0.35, 0.75)
-        case .appliance: return material(0.60, 0.62, 0.65)
-        case .other: return material(0.90, 0.45, 0.65)
+        case .bed: return (0.35, 0.36, 0.85)
+        case .sofa: return (0.20, 0.65, 0.65)
+        case .table: return (0.62, 0.45, 0.30)
+        case .desk: return (0.25, 0.50, 0.90)
+        case .storage: return (0.30, 0.70, 0.40)
+        case .tv: return (0.60, 0.35, 0.75)
+        case .appliance: return (0.60, 0.62, 0.65)
+        case .other: return (0.90, 0.45, 0.65)
         }
     }
 }
