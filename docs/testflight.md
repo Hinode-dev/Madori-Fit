@@ -28,34 +28,55 @@ Xcode プロジェクトは `project.yml` から XcodeGen で生成する（リ�
 5. **TestFlight のテスターを追加する**（App Store Connect > TestFlight）。
    内部テスターは審査なしで配信できる。
 
-## 証明書を固定する（推奨。「証明書の数が上限」のエラーが出たら必須）
+## 署名について
 
-自動署名のままだと、実行のたびに新しい証明書が作られ、Apple の上限に達します
-（`Your account has reached the maximum number of certificates`）。
-配布用の証明書とプロファイルを一度だけ作って、シークレットに入れると、この問題は起きません。
-3 つのシークレットが入っていれば、自動的にこの方式になります。
+既定では、次のようにして、**Mac も、証明書の作成も、要りません**。
+- アーカイブは、署名をしないで作ります。
+- 書き出しのときだけ、Apple のクラウドで管理された配布用証明書で署名して、アップロードします（API キーの権限が Admin である必要があります）。
 
-1. **証明書署名要求 (CSR) を作る**（Mac）: キーチェーンアクセス > 証明書アシスタント > 認証局に証明書を要求。
-   メールアドレスと名前を入れ、「ディスクに保存」を選ぶ。
-2. **Apple Distribution 証明書を作る**: developer.apple.com > Certificates > ＋ > Apple Distribution。
-   1 の CSR をアップロードし、できた `.cer` をダウンロードして、ダブルクリックでキーチェーンに入れる。
-3. **`.p12` に書き出す**: キーチェーンアクセス > 「自分の証明書」で、「Apple Distribution: …」を右クリック > 書き出す。
-   形式は `.p12`、パスワードを決める。
-4. **プロファイルを作る**: Profiles > ＋ > App Store Connect（App Store）> 自分のバンドル ID > 2 の証明書を選ぶ。
-   名前は、例えば `MadoriFit AppStore`。できた `.mobileprovision` をダウンロードする。
-5. **シークレットを登録する**（Mac のターミナルで、値をクリップボードにコピーしてから貼る）。
+以前は、アーカイブでも自動署名をしていたので、実行のたびに開発用の証明書が作られ、
+`Your account has reached the maximum number of certificates`（証明書の数が上限）のエラーになっていました。
+この方式では、開発用の証明書は作りません。すでに上限に達しているときは、
+developer.apple.com > Certificates で、不要な「Apple Development」証明書（`Created via API` など）を削除してください。
 
-   | 名前 | 内容 | 値の作り方 |
-   |---|---|---|
-   | `DIST_CERT_P12_BASE64` | `.p12` の中身 | `base64 -i 証明書.p12 \| pbcopy` |
-   | `DIST_CERT_PASSWORD` | 3 で決めたパスワード | そのまま |
-   | `PROVISIONING_PROFILE_BASE64` | `.mobileprovision` の中身 | `base64 -i プロファイル.mobileprovision \| pbcopy` |
+### 証明書を自分で用意する方式（任意）
+
+上の既定の方式がうまくいかないときの代わりです。次の 3 つのシークレットを入れると、自動的にこちらになります。
+
+| 名前 | 内容 |
+|---|---|
+| `DIST_CERT_P12_BASE64` | Apple Distribution 証明書と秘密鍵の `.p12` を、base64 にしたもの |
+| `DIST_CERT_PASSWORD` | `.p12` のパスワード |
+| `PROVISIONING_PROFILE_BASE64` | App Store 用の `.mobileprovision` を、base64 にしたもの |
+
+Mac がなくても、OpenSSL（Windows なら Git Bash や WSL に入っています）で作れます。
+
+1. **秘密鍵と、証明書署名要求 (CSR) を作る**
+   ```sh
+   openssl genrsa -out madori.key 2048
+   openssl req -new -key madori.key -out madori.csr -subj "/emailAddress=あなたのメール/CN=あなたの名前/C=JP"
+   ```
+   `madori.key` は秘密鍵です。誰にも渡さず、公開しないでください。
+2. developer.apple.com > Certificates > ＋ > **Apple Distribution** で、`madori.csr` をアップロードし、`.cer` をダウンロードする。
+3. **`.p12` を作る**（`.cer` は、`distribution.cer` という名前にしたとします）
+   ```sh
+   openssl x509 -inform DER -in distribution.cer -out distribution.pem
+   openssl pkcs12 -export -inkey madori.key -in distribution.pem -out distribution.p12 \
+     -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1 -passout pass:好きなパスワード
+   ```
+4. developer.apple.com > Profiles > ＋ > **App Store Connect** > 自分のバンドル ID > 2 の証明書 で、プロファイルを作り、`.mobileprovision` をダウンロードする。
+5. ファイルを base64 にして、シークレットに貼る（Windows の Git Bash なら `base64 -w0 distribution.p12`、`base64 -w0 プロファイル.mobileprovision`）。
 
 プロファイルには、App ID に登録した Capabilities（Data Protection など）が含まれている必要があります。
-Capabilities を変えたときは、プロファイルを作り直して、シークレットを更新してください。
-証明書とプロファイルの有効期限は 1 年です。切れたら、作り直します。
+証明書とプロファイルの有効期限は 1 年です。
 
 ## 配信のしかた
+
+**Mac がなくても、GitHub の画面から配信できます。** リポジトリの「Releases」>「Draft a new release」で、
+「Choose a tag」に `v1.0.0` のような新しい名前を入れ、「Create new tag」を選び、「Target」にブランチを指定して、
+「Publish release」を押すと、タグが作られて、配信が始まります。
+
+コマンドが使えるなら、次のようにもできます。
 
 ```sh
 git tag v1.0.0

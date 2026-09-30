@@ -3,7 +3,8 @@
 #
 # 署名の方式は、環境変数で切り替える。
 #   DIST_CERT_P12_BASE64 などが設定されている → 固定した配布用証明書とプロファイルで署名する（推奨）。
-#   設定されていない → Xcode の自動署名（実行のたびに証明書が作られ、上限に達することがある）。
+#   設定されていない → アーカイブは署名せず、書き出しのときに、Apple のクラウド管理の配布用証明書で署名する。
+#                       （Mac も、証明書の作成も要らない。）
 set -euo pipefail
 
 mkdir -p build
@@ -74,15 +75,18 @@ PLIST
     -exportOptionsPlist build/ExportOptions.plist \
     "${AUTH[@]}"
 else
-  echo "署名: Xcode の自動署名（証明書が作られ続けるので、固定した証明書への切り替えを推奨）"
+  echo "署名: アーカイブは署名なし、書き出しで Apple のクラウド管理の配布用証明書を使う"
 
+  # アーカイブで署名すると、実行のたびに開発用の証明書が作られ、上限に達する。
+  # 配信に開発用の証明書は要らないので、ここでは署名せず、書き出しのときだけ署名する。
   xcodebuild archive \
     -project MadoriFit.xcodeproj \
     -scheme MadoriFit \
     -destination 'generic/platform=iOS' \
     -archivePath build/MadoriFit.xcarchive \
-    -allowProvisioningUpdates \
-    "${AUTH[@]}"
+    CODE_SIGNING_ALLOWED=NO \
+    CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGN_IDENTITY=""
 
   cat > build/ExportOptions.plist <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
