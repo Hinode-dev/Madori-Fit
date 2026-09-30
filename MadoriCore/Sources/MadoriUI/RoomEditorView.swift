@@ -143,7 +143,9 @@ public struct RoomNameField: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             TextField("名前（例: 寝室）", text: $name)
+                #if os(iOS)
                 .textInputAutocapitalization(.never)
+                #endif
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(RoomNaming.suggestions, id: \.self) { suggestion in
