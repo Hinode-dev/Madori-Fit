@@ -9,7 +9,7 @@ App Store Connect に貼り付けるための、文章の下書きです。`[ ]`
 | アプリ名（30 文字以内） | Madori Fit |
 | サブタイトル（30 文字以内） | 部屋をスキャンして家具の配置を提案 |
 | カテゴリ | プライマリ: ライフスタイル ／ セカンダリ: ユーティリティ |
-| 価格 | [480〜980 円のあいだで、決める] |
+| 価格 | 730 円で発売。レビューが 10 件ほど集まり、評価が安定したら、980 円に上げる |
 | 年齢制限 | 4+（暴力・性的表現などは、ありません） |
 | サポート URL | https://hinode-dev.github.io/Madori-Fit/support（GitHub Pages を有効にした場合） |
 | プライバシーポリシー URL | https://hinode-dev.github.io/Madori-Fit/privacy-policy |
