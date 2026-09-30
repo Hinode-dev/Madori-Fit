@@ -1,0 +1,6 @@
+# 公開用のページ（プライバシーポリシーとサポート）の設定。
+# この docs/ の中身は、誰でも見られる状態で公開される。内部用の文書は、notes/ に置くこと。
+title: Madori Fit
+description: 部屋をスキャンして、家具の配置を提案するアプリ
+lang: ja
+theme: jekyll-theme-minimal

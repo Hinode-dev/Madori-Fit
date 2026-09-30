@@ -1,4 +1,6 @@
 ---
+layout: default
+permalink: /support/
 title: サポート
 ---
 
