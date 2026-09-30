@@ -11,10 +11,17 @@ public struct EditableLayoutPlanView: View {
     public let layout: MadoriCore.Layout
     @Binding public var selectedID: UUID?
     public let pinnedIDs: Set<UUID>
+    /// ドラッグを始める直前に呼ぶ。やり直しの履歴に、変更前の状態を残すのに使う。
+    private let onEditStart: () -> Void
+    /// ドラッグが終わったときに呼ぶ。
+    private let onEditEnd: () -> Void
     @State private var dragStarts: [UUID: Point] = [:]
 
     public init(room: Room, items: Binding<[PlacedFurniture]>, layout: MadoriCore.Layout,
-                selectedID: Binding<UUID?>, pinnedIDs: Set<UUID>) {
+                selectedID: Binding<UUID?>, pinnedIDs: Set<UUID>,
+                onEditStart: @escaping () -> Void = {}, onEditEnd: @escaping () -> Void = {}) {
+        self.onEditStart = onEditStart
+        self.onEditEnd = onEditEnd
         self.room = room
         _items = items
         self.layout = layout
@@ -49,6 +56,7 @@ public struct EditableLayoutPlanView: View {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
                 selectedID = id
+                if dragStarts[id] == nil { onEditStart() }
                 guard let i = items.firstIndex(where: { $0.furniture.id == id }) else { return }
                 let start = dragStarts[id] ?? items[i].center
                 dragStarts[id] = start
@@ -58,6 +66,9 @@ public struct EditableLayoutPlanView: View {
                                      y: start.y - Double(value.translation.height / scale))
                 items[i] = LayoutEditing.snapped(moved, in: room)
             }
-            .onEnded { _ in dragStarts[id] = nil }
+            .onEnded { _ in
+                dragStarts[id] = nil
+                onEditEnd()
+            }
     }
 }

@@ -153,3 +153,29 @@ final class RoomRenameTests: XCTestCase {
         XCTAssertEqual(record.room.name, "寝室")
     }
 }
+
+final class StorageOpenTests: XCTestCase {
+    private struct Boom: LocalizedError {
+        var errorDescription: String? { "壊れています" }
+    }
+
+    func testFailureIsReportedNotThrown() {
+        let result = MadoriStorage.open { throw Boom() }
+        guard case .failed(let message) = result else { return XCTFail("失敗になるはず") }
+        XCTAssertEqual(message, "壊れています")
+    }
+
+    func testTemporaryStorageOpens() {
+        guard case .ready = MadoriStorage.openTemporary() else { return XCTFail("開けるはず") }
+    }
+
+    func testSampleCanBeSavedIntoARecord() throws {
+        let sample = SampleData.make()
+        let record = RoomRecord(room: sample.room)
+        record.furniture = sample.furniture
+        record.passages = sample.passages
+        XCTAssertEqual(record.name, "サンプル: 6畳の洋室")
+        XCTAssertEqual(record.furniture.count, 3)
+        XCTAssertEqual(record.deliveryRoute.count, 4)     // 通り道 3 + この部屋のドア 1
+    }
+}

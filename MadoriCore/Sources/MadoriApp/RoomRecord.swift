@@ -79,7 +79,29 @@ final class RoomRecord {
     }
 }
 
+/// 保存先を開いた結果。
+public enum StorageResult {
+    case ready(ModelContainer)
+    case failed(String)
+}
+
 public enum MadoriStorage {
+    /// 保存先を開く。開けなければ、理由を返す（アプリを止めない）。
+    public static func open(
+        make: () throws -> ModelContainer = { try MadoriStorage.makeContainer() }
+    ) -> StorageResult {
+        do {
+            return .ready(try make())
+        } catch {
+            return .failed(error.localizedDescription)
+        }
+    }
+
+    /// 保存せずに使うための、一時的な保存先。閉じると内容は消える。
+    public static func openTemporary() -> StorageResult {
+        open { try MadoriStorage.makeContainer(inMemory: true) }
+    }
+
     /// アプリ全体で使う保存先。iCloud 同期は、いまは無効。
     public static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: inMemory, cloudKitDatabase: .none)

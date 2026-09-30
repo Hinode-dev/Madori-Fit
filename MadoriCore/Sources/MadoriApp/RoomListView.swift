@@ -11,6 +11,8 @@ struct RoomListView: View {
     @State private var pendingDelete: RoomRecord?
     @State private var renaming: RoomRecord?
     @State private var draftName = ""
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var showsOnboarding = false
 
     var body: some View {
         List {
@@ -43,10 +45,22 @@ struct RoomListView: View {
             }
         }
         .navigationTitle("お部屋")
+        .onAppear {
+            if !hasSeenOnboarding { showsOnboarding = true }
+        }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $showsOnboarding) { onboarding }
+        #else
+        .sheet(isPresented: $showsOnboarding) { onboarding }
+        #endif
         .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("使い方", systemImage: "questionmark.circle") { showsOnboarding = true }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button("寸法を入力", systemImage: "ruler") { isAdding = true }
+                    Button("サンプルの部屋を追加", systemImage: "sparkles") { addSample() }
                     #if canImport(RoomPlan) && os(iOS)
                     if RoomScanSupport.isAvailable {
                         Button("スキャンして作成", systemImage: "camera.viewfinder") { isScanning = true }
@@ -105,6 +119,29 @@ struct RoomListView: View {
 }
 
 extension RoomListView {
+    fileprivate var onboarding: some View {
+        OnboardingView(
+            onFinish: {
+                hasSeenOnboarding = true
+                showsOnboarding = false
+            },
+            onTrySample: {
+                addSample()
+                hasSeenOnboarding = true
+                showsOnboarding = false
+            }
+        )
+    }
+
+    /// 家具と搬入の通り道つきの、サンプルの部屋を作る。
+    fileprivate func addSample() {
+        let sample = SampleData.make()
+        let record = RoomRecord(room: sample.room)
+        record.furniture = sample.furniture
+        record.passages = sample.passages
+        context.insert(record)
+    }
+
     fileprivate var emptyState: some View {
         VStack(spacing: 12) {
             Text("🏠").font(.system(size: 72))
@@ -116,6 +153,8 @@ extension RoomListView {
             Button("お部屋を追加する", systemImage: "plus") { isAdding = true }
                 .buttonStyle(.pill)
                 .padding(.top, 8)
+            Button("サンプルの部屋で試す", systemImage: "sparkles") { addSample() }
+                .buttonStyle(.soft)
         }
         .padding(32)
     }
