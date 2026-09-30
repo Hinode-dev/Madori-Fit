@@ -28,6 +28,33 @@ Xcode プロジェクトは `project.yml` から XcodeGen で生成する（リ�
 5. **TestFlight のテスターを追加する**（App Store Connect > TestFlight）。
    内部テスターは審査なしで配信できる。
 
+## 証明書を固定する（推奨。「証明書の数が上限」のエラーが出たら必須）
+
+自動署名のままだと、実行のたびに新しい証明書が作られ、Apple の上限に達します
+（`Your account has reached the maximum number of certificates`）。
+配布用の証明書とプロファイルを一度だけ作って、シークレットに入れると、この問題は起きません。
+3 つのシークレットが入っていれば、自動的にこの方式になります。
+
+1. **証明書署名要求 (CSR) を作る**（Mac）: キーチェーンアクセス > 証明書アシスタント > 認証局に証明書を要求。
+   メールアドレスと名前を入れ、「ディスクに保存」を選ぶ。
+2. **Apple Distribution 証明書を作る**: developer.apple.com > Certificates > ＋ > Apple Distribution。
+   1 の CSR をアップロードし、できた `.cer` をダウンロードして、ダブルクリックでキーチェーンに入れる。
+3. **`.p12` に書き出す**: キーチェーンアクセス > 「自分の証明書」で、「Apple Distribution: …」を右クリック > 書き出す。
+   形式は `.p12`、パスワードを決める。
+4. **プロファイルを作る**: Profiles > ＋ > App Store Connect（App Store）> 自分のバンドル ID > 2 の証明書を選ぶ。
+   名前は、例えば `MadoriFit AppStore`。できた `.mobileprovision` をダウンロードする。
+5. **シークレットを登録する**（Mac のターミナルで、値をクリップボードにコピーしてから貼る）。
+
+   | 名前 | 内容 | 値の作り方 |
+   |---|---|---|
+   | `DIST_CERT_P12_BASE64` | `.p12` の中身 | `base64 -i 証明書.p12 \| pbcopy` |
+   | `DIST_CERT_PASSWORD` | 3 で決めたパスワード | そのまま |
+   | `PROVISIONING_PROFILE_BASE64` | `.mobileprovision` の中身 | `base64 -i プロファイル.mobileprovision \| pbcopy` |
+
+プロファイルには、App ID に登録した Capabilities（Data Protection など）が含まれている必要があります。
+Capabilities を変えたときは、プロファイルを作り直して、シークレットを更新してください。
+証明書とプロファイルの有効期限は 1 年です。切れたら、作り直します。
+
 ## 配信のしかた
 
 ```sh
@@ -41,6 +68,7 @@ git push origin v1.0.0
 ## うまくいかないとき
 
 - **`No profiles for ... were found` / 証明書の作成に失敗**: API キーの権限が Admin か確認する。
+- **`Your account has reached the maximum number of certificates`**: 上の「証明書を固定する」を行う。すぐに直したいときは、developer.apple.com > Certificates で、不要な「Apple Development」証明書（`Created via API` など）を削除する。
 - **`Cloud signing permission error`**: 同上。アカウントの Account Holder が、API キーの利用を許可しているか確認する。
 - **`The bundle version must be higher`**: ビルド番号は日時なので、通常は増え続ける。以前に大きな番号（例: 未来の日時）で上げてしまった場合は、それより大きくなるまで待つか、`MARKETING_VERSION` を上げる。
 - **アイコン関連のエラー**: `App/Assets.xcassets/AppIcon.appiconset/icon-1024.png` は仮のアイコン。差し替えるときは、透過なしの 1024×1024 の PNG にする。

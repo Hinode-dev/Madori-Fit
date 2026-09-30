@@ -17,6 +17,10 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      # 固定した配布用証明書とプロファイル（任意。設定すると、証明書が作られ続ける問題を避けられる）
+      DIST_CERT_P12_BASE64: ${{ secrets.DIST_CERT_P12_BASE64 }}
+      DIST_CERT_PASSWORD: ${{ secrets.DIST_CERT_PASSWORD }}
+      PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -60,42 +64,9 @@ jobs:
           mkdir -p "$HOME/private_keys"
           printf '%s' "$ASC_KEY_P8" > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
 
-      - name: アーカイブ
-        run: |
-          xcodebuild archive \
-            -project MadoriFit.xcodeproj \
-            -scheme MadoriFit \
-            -destination 'generic/platform=iOS' \
-            -archivePath build/MadoriFit.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
-
-      - name: 書き出しと TestFlight へのアップロード
-        run: |
-          cat > build/ExportOptions.plist <<PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
-            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
-            <key>signingStyle</key><string>automatic</string>
-            <key>uploadSymbols</key><true/>
-            <key>manageAppVersionAndBuildNumber</key><false/>
-          </dict>
-          </plist>
-          PLIST
-          xcodebuild -exportArchive \
-            -archivePath build/MadoriFit.xcarchive \
-            -exportPath build/export \
-            -exportOptionsPlist build/ExportOptions.plist \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+      - name: アーカイブして TestFlight にアップロード
+        # 署名の方式は ci/archive-and-upload.sh が、シークレットの有無で切り替える。
+        run: ./ci/archive-and-upload.sh
 
       - name: アーカイブを保存
         if: always()
