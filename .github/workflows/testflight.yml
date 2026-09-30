@@ -1,11 +1,17 @@
 name: TestFlight
 
 # v から始まるタグを push するか、Actions 画面から手動で実行すると、TestFlight にアップロードする。
+# テストは、通常の CI (core-tests.yml) で済んでいるものとして、ここでは動かさない（macOS の分数の節約）。タグを打つ前に、CI が通っているか確認する。
 on:
   workflow_dispatch:
   push:
     tags:
       - "v*"
+
+# 同時に 2 つ動かさない（同じビルド番号や、アップロードの衝突を避ける）。
+concurrency:
+  group: testflight
+  cancel-in-progress: false
 
 jobs:
   testflight:
@@ -49,10 +55,6 @@ jobs:
           fi
           sudo xcode-select -s "$latest"
           xcodebuild -version
-
-      - name: テスト
-        working-directory: MadoriCore
-        run: swift test
 
       - name: Xcode プロジェクトを生成
         run: |

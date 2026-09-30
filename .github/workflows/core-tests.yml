@@ -13,9 +13,15 @@ on:
       - "App/**"
       - "project.yml"
 
+# 同じブランチに続けて push したとき、古い実行は止める（macOS の実行時間は、10 倍で数えられるため）。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: macos-15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: swift test
@@ -25,6 +31,7 @@ jobs:
   ios-build:
     # macOS 向けのビルドでは除外される iOS 専用コード（RoomPlan によるスキャン）をビルドで確認する。
     runs-on: macos-15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: xcodebuild (iOS)
@@ -39,6 +46,7 @@ jobs:
     # project.yml から Xcode プロジェクトを生成し、署名なしでアプリ本体をビルドできるか確認する。
     # TestFlight 用のシークレットが無くても動く。
     runs-on: macos-15
+    timeout-minutes: 25
     env:
       BUNDLE_ID: com.example.madorifit
       APPLE_TEAM_ID: ABCDE12345
