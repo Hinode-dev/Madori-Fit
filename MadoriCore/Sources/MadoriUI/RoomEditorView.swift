@@ -41,7 +41,7 @@ public struct RoomEditorView: View {
                 }
             }
             Section("部屋") {
-                TextField("名前（例: 洋室）", text: $draft.name)
+                RoomNameField(name: $draft.name)
                 NumberField(title: "幅 (cm)", value: $draft.width, measures: true)
                 NumberField(title: "奥行き (cm)", value: $draft.depth, measures: true)
                 if draft.isSizeValid {
@@ -128,6 +128,32 @@ private struct EditorPreviewPane: View {
         }
         .padding(.vertical, 8)
         .background(.bar)
+    }
+}
+
+/// 部屋の名前の入力欄。よくある名前を、ワンタップで選べる。
+public struct RoomNameField: View {
+    @Binding var name: String
+
+    public init(name: Binding<String>) {
+        _name = name
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField("名前（例: 寝室）", text: $name)
+                .textInputAutocapitalization(.never)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(RoomNaming.suggestions, id: \.self) { suggestion in
+                        Button(suggestion) { name = suggestion }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .tint(name == suggestion ? .accentColor : .secondary)
+                    }
+                }
+            }
+        }
     }
 }
 

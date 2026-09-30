@@ -9,6 +9,8 @@ struct RoomListView: View {
     @State private var isAdding = false
     @State private var isScanning = false
     @State private var pendingDelete: RoomRecord?
+    @State private var renaming: RoomRecord?
+    @State private var draftName = ""
 
     var body: some View {
         List {
@@ -16,7 +18,12 @@ struct RoomListView: View {
                 NavigationLink(value: record) {
                     RoomRow(record: record)
                 }
+                .swipeActions(edge: .leading) {
+                    Button("名前", systemImage: "pencil") { startRenaming(record) }
+                        .tint(.blue)
+                }
                 .contextMenu {
+                    Button("名前を変更", systemImage: "pencil") { startRenaming(record) }
                     Button("削除", systemImage: "trash", role: .destructive) { pendingDelete = record }
                 }
             }
@@ -47,6 +54,11 @@ struct RoomListView: View {
             }
         }
         .navigationDestination(for: RoomRecord.self) { RoomDetailView(record: $0) }
+        .alert("部屋の名前", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+            TextField("名前", text: $draftName)
+            Button("保存") { applyRename() }
+            Button("キャンセル", role: .cancel) {}
+        }
         .confirmationDialog(
             "この部屋を削除しますか？",
             isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
@@ -63,7 +75,7 @@ struct RoomListView: View {
             #if canImport(RoomPlan) && os(iOS)
             RoomScanFlow(
                 onSave: { room in
-                    context.insert(RoomRecord(room: room))
+                    context.insert(RoomRecord(room: named(room)))
                     isScanning = false
                 },
                 onCancel: { isScanning = false }
@@ -73,7 +85,7 @@ struct RoomListView: View {
         .sheet(isPresented: $isAdding) {
             NavigationStack {
                 RoomEditorView { room in
-                    context.insert(RoomRecord(room: room))
+                    context.insert(RoomRecord(room: named(room)))
                     isAdding = false
                 }
                 .navigationTitle("部屋を追加")
@@ -84,6 +96,27 @@ struct RoomListView: View {
                 }
             }
         }
+    }
+}
+
+extension RoomListView {
+    /// 名前が空なら、「部屋 1」のような名前を付ける。
+    fileprivate func named(_ room: Room) -> Room {
+        RoomNaming.named(room, existing: rooms.map(\.name))
+    }
+
+    fileprivate func startRenaming(_ record: RoomRecord) {
+        draftName = record.name
+        renaming = record
+    }
+
+    fileprivate func applyRename() {
+        guard let record = renaming else { return }
+        let name = RoomNaming.trimmed(draftName)
+        guard !name.isEmpty else { return }
+        var room = record.room
+        room.name = name
+        record.room = room
     }
 }
 

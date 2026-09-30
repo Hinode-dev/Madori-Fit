@@ -140,3 +140,16 @@ final class DeliveryRouteTests: XCTestCase {
         XCTAssertEqual(record.passages, [elevator])
     }
 }
+
+final class RoomRenameTests: XCTestCase {
+    func testRenamingUpdatesBothTheRoomAndTheListName() {
+        let record = RoomRecord(room: Room.rectangle(name: "", width: 270, depth: 360))
+        XCTAssertEqual(record.name, "")
+
+        var room = record.room
+        room.name = "寝室"
+        record.room = room
+        XCTAssertEqual(record.name, "寝室")
+        XCTAssertEqual(record.room.name, "寝室")
+    }
+}

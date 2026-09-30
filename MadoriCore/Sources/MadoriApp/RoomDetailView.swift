@@ -69,6 +69,9 @@ struct RoomDetailView: View {
 
     private var form: some View {
         Form {
+            Section("部屋の名前") {
+                RoomNameField(name: nameBinding)
+            }
             roomSection
             furnitureSection
             deliverySection
@@ -95,6 +98,18 @@ struct RoomDetailView: View {
                 FurniturePickerView(added: record.furniture, onAdd: { add($0) }, onUndo: { undoAdd(named: $0) })
             }
         }
+    }
+
+    /// 名前を、部屋のデータと一覧の表示の両方に反映する。
+    private var nameBinding: Binding<String> {
+        Binding(
+            get: { record.name },
+            set: { newValue in
+                var room = record.room
+                room.name = newValue
+                record.room = room
+            }
+        )
     }
 
     /// 画面を消してから、少し待って削除する。消えかけの画面が、削除済みのデータを読まないようにするため。
