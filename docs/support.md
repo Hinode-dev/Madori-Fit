@@ -4,7 +4,7 @@ title: サポート
 
 # Madori Fit サポート
 
-お問い合わせ: [連絡先のメールアドレス]
+お問い合わせ: hinode.entertainment+madorifit@gmail.com
 
 ## よくある質問
 

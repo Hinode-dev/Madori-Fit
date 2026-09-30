@@ -13,7 +13,7 @@ App Store Connect に貼り付けるための、文章の下書きです。`[ ]`
 | 年齢制限 | 4+（暴力・性的表現などは、ありません） |
 | サポート URL | https://hinode-dev.github.io/Madori-Fit/support（GitHub Pages を有効にした場合） |
 | プライバシーポリシー URL | https://hinode-dev.github.io/Madori-Fit/privacy-policy |
-| 著作権 | [2026 開発者名] |
+| 著作権 | © 2026 Hinode Entertainment |
 | 対応端末 | iPhone（iOS 17 以上）。スキャンは、LiDAR 搭載機のみ |
 
 ## プロモーション用テキスト（170 文字以内）
