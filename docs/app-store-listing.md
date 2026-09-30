@@ -11,8 +11,8 @@ App Store Connect に貼り付けるための、文章の下書きです。`[ ]`
 | カテゴリ | プライマリ: ライフスタイル ／ セカンダリ: ユーティリティ |
 | 価格 | 730 円で発売。レビューが 10 件ほど集まり、評価が安定したら、980 円に上げる |
 | 年齢制限 | 4+（暴力・性的表現などは、ありません） |
-| サポート URL | https://hinode-dev.github.io/Madori-Fit/support（GitHub Pages を有効にした場合） |
-| プライバシーポリシー URL | https://hinode-dev.github.io/Madori-Fit/privacy-policy |
+| サポート URL | https://ik-lv7.github.io/Madori-Fit/support（GitHub Pages を有効にした場合） |
+| プライバシーポリシー URL | https://ik-lv7.github.io/Madori-Fit/privacy-policy |
 | 著作権 | © 2026 Hinode Entertainment |
 | 対応端末 | iPhone（iOS 17 以上）。スキャンは、LiDAR 搭載機のみ |
 
