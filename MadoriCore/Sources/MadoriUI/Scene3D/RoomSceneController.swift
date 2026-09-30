@@ -26,7 +26,7 @@ public final class RoomSceneController: NSObject, ObservableObject, SCNSceneRend
 
     public override init() {
         super.init()
-        scene.background.contents = CGColor(red: 0.93, green: 0.95, blue: 0.98, alpha: 1)
+        scene.background.contents = CGColor(red: 1.0, green: 0.96, blue: 0.92, alpha: 1)
         scene.rootNode.addChildNode(content)
 
         let camera = SCNCamera()

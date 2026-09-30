@@ -92,6 +92,7 @@ struct RoomDetailView: View {
             ARPlacementScreen(furniture: furniture) { arFurniture = nil }
         }
         #endif
+        .madoriBackground()
         .sheet(isPresented: $isEditingRoom) { editRoomSheet }
         .sheet(isPresented: $isAddingFurniture) {
             NavigationStack {

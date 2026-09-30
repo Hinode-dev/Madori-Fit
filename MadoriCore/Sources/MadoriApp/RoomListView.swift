@@ -16,8 +16,11 @@ struct RoomListView: View {
         List {
             ForEach(rooms) { record in
                 NavigationLink(value: record) {
-                    RoomRow(record: record)
+                    RoomCard(record: record)
                 }
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
                 .swipeActions(edge: .leading) {
                     Button("名前", systemImage: "pencil") { startRenaming(record) }
                         .tint(.blue)
@@ -32,13 +35,14 @@ struct RoomListView: View {
                 if let i = offsets.first { pendingDelete = rooms[i] }
             }
         }
+        .listStyle(.plain)
+        .madoriBackground()
         .overlay {
             if rooms.isEmpty {
-                ContentUnavailableView("部屋がありません", systemImage: "square.dashed",
-                                       description: Text("右上の＋から、部屋の寸法を入力してください"))
+                emptyState
             }
         }
-        .navigationTitle("部屋")
+        .navigationTitle("お部屋")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
@@ -49,7 +53,8 @@ struct RoomListView: View {
                     }
                     #endif
                 } label: {
-                    Label("部屋を追加", systemImage: "plus")
+                    Label("部屋を追加", systemImage: "plus.circle.fill")
+                        .font(.title3)
                 }
             }
         }
@@ -100,6 +105,21 @@ struct RoomListView: View {
 }
 
 extension RoomListView {
+    fileprivate var emptyState: some View {
+        VStack(spacing: 12) {
+            Text("🏠").font(.system(size: 72))
+            Text("まだお部屋がありません").font(.title3.bold())
+            Text("お部屋の寸法を入れるか、スキャンして、\n家具の置き方を考えましょう")
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+            Button("お部屋を追加する", systemImage: "plus") { isAdding = true }
+                .buttonStyle(.pill)
+                .padding(.top, 8)
+        }
+        .padding(32)
+    }
+
     /// 名前が空なら、「部屋 1」のような名前を付ける。
     fileprivate func named(_ room: Room) -> Room {
         RoomNaming.named(room, existing: rooms.map(\.name))
@@ -120,18 +140,31 @@ extension RoomListView {
     }
 }
 
-private struct RoomRow: View {
+private struct RoomCard: View {
     let record: RoomRecord
 
     var body: some View {
         let room = record.room
-        let b = room.bounds
-        VStack(alignment: .leading, spacing: 2) {
-            Text(record.name.isEmpty ? "名称未設定" : record.name).font(.headline)
-            Text(String(format: "%.0f × %.0f cm・約 %.1f 畳・家具 %d 点",
-                        b.width, b.height, room.area / 16_200, record.furniture.count))
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+        let name = record.name.isEmpty ? "名称未設定" : record.name
+        let tint = MadoriTheme.tint(for: record.name)
+        HStack(spacing: 14) {
+            Text(RoomNaming.icon(for: record.name))
+                .font(.system(size: 34))
+                .frame(width: 64, height: 64)
+                .background(tint.opacity(0.22), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            VStack(alignment: .leading, spacing: 6) {
+                Text(name).font(.headline)
+                HStack(spacing: 6) {
+                    InfoChip(String(format: "%.1f 畳", room.area / 16_200), systemImage: "square.grid.2x2",
+                             tint: tint)
+                    InfoChip("家具 \(record.furniture.count)", systemImage: "chair.lounge", tint: tint)
+                    if !record.sortedSavedLayouts.isEmpty {
+                        InfoChip("案 \(record.sortedSavedLayouts.count)", systemImage: "heart.fill", tint: tint)
+                    }
+                }
+            }
+            Spacer(minLength: 0)
         }
+        .madoriCard(padding: 12)
     }
 }

@@ -8,6 +8,16 @@ public enum RoomNaming {
         "書斎", "子ども部屋", "玄関", "廊下", "浴室", "トイレ"
     ]
 
+    /// 部屋の名前に合う絵文字。分からなければ家。
+    public static func icon(for name: String) -> String {
+        let table: [(String, String)] = [
+            ("リビング", "🛋️"), ("ダイニング", "🍽️"), ("キッチン", "🍳"), ("寝室", "🛏️"),
+            ("和室", "🍵"), ("洋室", "🪑"), ("書斎", "📚"), ("子ども", "🧸"),
+            ("玄関", "🚪"), ("廊下", "👣"), ("浴室", "🛁"), ("風呂", "🛁"), ("トイレ", "🚽")
+        ]
+        return table.first { name.contains($0.0) }?.1 ?? "🏠"
+    }
+
     /// 前後の空白を取った名前。
     public static func trimmed(_ name: String) -> String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)

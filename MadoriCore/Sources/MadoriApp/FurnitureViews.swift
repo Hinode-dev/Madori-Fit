@@ -43,6 +43,7 @@ struct FurniturePickerView: View {
                 }
             }
         }
+        .madoriBackground()
         .navigationTitle("家具を追加")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -166,6 +167,7 @@ struct FurnitureEditView: View {
                 .disabled(!isValid)
             }
         }
+        .madoriBackground()
         .navigationTitle(furniture.name.isEmpty ? "家具" : furniture.name)
     }
 }

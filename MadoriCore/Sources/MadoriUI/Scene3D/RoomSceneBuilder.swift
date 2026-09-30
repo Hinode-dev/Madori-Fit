@@ -20,7 +20,7 @@ enum RoomSceneBuilder {
             // 床
             let bounds = room.bounds
             let floor = SCNBox(width: CGFloat(bounds.width), height: 2, length: CGFloat(bounds.height), chamferRadius: 0)
-            floor.materials = [material(0.86, 0.84, 0.80)]
+            floor.materials = [material(0.95, 0.86, 0.74)]
             let floorNode = SCNNode(geometry: floor)
             floorNode.name = "floor"
             floorNode.position = vector(bounds.center.x, -1, -bounds.center.y)
@@ -126,19 +126,19 @@ enum RoomSceneBuilder {
     }
 
     /// 内側が見えるように、壁は半透明にする。
-    private static func wallMaterial() -> SCNMaterial { material(0.97, 0.97, 0.98, alpha: 0.5) }
+    private static func wallMaterial() -> SCNMaterial { material(1.0, 0.97, 0.96, alpha: 0.5) }
     private static func glassMaterial() -> SCNMaterial { material(0.55, 0.85, 1.0, alpha: 0.35) }
 
     static func categoryColor(_ category: FurnitureCategory) -> (r: Double, g: Double, b: Double) {
         switch category {
-        case .bed: return (0.35, 0.36, 0.85)
-        case .sofa: return (0.20, 0.65, 0.65)
-        case .table: return (0.62, 0.45, 0.30)
-        case .desk: return (0.25, 0.50, 0.90)
-        case .storage: return (0.30, 0.70, 0.40)
-        case .tv: return (0.60, 0.35, 0.75)
-        case .appliance: return (0.60, 0.62, 0.65)
-        case .other: return (0.90, 0.45, 0.65)
+        case .bed: return (0.72, 0.62, 0.96)
+        case .sofa: return (0.40, 0.80, 0.70)
+        case .table: return (0.96, 0.70, 0.50)
+        case .desk: return (0.50, 0.72, 1.00)
+        case .storage: return (0.56, 0.84, 0.58)
+        case .tv: return (0.90, 0.60, 0.86)
+        case .appliance: return (0.68, 0.74, 0.82)
+        case .other: return (1.00, 0.62, 0.72)
         }
     }
 }

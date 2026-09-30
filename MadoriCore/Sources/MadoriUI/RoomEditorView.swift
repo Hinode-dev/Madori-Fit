@@ -84,6 +84,7 @@ public struct RoomEditorView: View {
                     .disabled(!draft.issues.isEmpty)
             }
         }
+        .madoriBackground()
         .safeAreaInset(edge: .top, spacing: 0) {
             if draft.isSizeValid {
                 EditorPreviewPane(draft: $draft)

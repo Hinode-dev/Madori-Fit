@@ -66,8 +66,8 @@ public struct LayoutPlanView: View {
         path.move(to: t.point(first))
         for c in room.corners.dropFirst() { path.addLine(to: t.point(c)) }
         path.closeSubpath()
-        context.fill(path, with: .color(.gray.opacity(0.12)))
-        context.stroke(path, with: .color(.primary.opacity(0.8)), style: StrokeStyle(lineWidth: 3, lineJoin: .miter))
+        context.fill(path, with: .color(Color(red: 1.0, green: 0.93, blue: 0.84).opacity(0.75)))
+        context.stroke(path, with: .color(Color(red: 0.60, green: 0.45, blue: 0.40)), style: StrokeStyle(lineWidth: 3, lineJoin: .round))
     }
 
     private func drawOpenings(_ context: inout GraphicsContext, _ t: PlanTransform) {
@@ -147,16 +147,9 @@ public struct LayoutPlanView: View {
 }
 
 enum Palette {
+    /// 3D のモデルと同じ色にそろえる。
     static func color(for category: FurnitureCategory) -> Color {
-        switch category {
-        case .bed: return .indigo
-        case .sofa: return .teal
-        case .table: return .brown
-        case .desk: return .blue
-        case .storage: return .green
-        case .tv: return .purple
-        case .appliance: return .gray
-        case .other: return .pink
-        }
+        let c = RoomSceneBuilder.categoryColor(category)
+        return Color(red: c.r, green: c.g, blue: c.b)
     }
 }

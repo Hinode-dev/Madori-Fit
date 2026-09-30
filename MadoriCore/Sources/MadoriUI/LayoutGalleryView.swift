@@ -35,6 +35,7 @@ public struct LayoutGalleryView<Actions: View>: View {
             }
             .padding(16)
         }
+        .background(MadoriTheme.background.ignoresSafeArea())
     }
 }
 
@@ -54,7 +55,7 @@ private struct LayoutCard<Actions: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("案 \(index + 1)").font(.headline)
+                Text("案 \(index + 1) ✨").font(.headline)
                 Spacer()
                 Picker("表示", selection: $isThreeD) {
                     Text("平面図").tag(false)
@@ -79,9 +80,7 @@ private struct LayoutCard<Actions: View>: View {
             }
             actions
         }
-        .padding(12)
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3)))
+        .madoriCard(padding: 14)
     }
 }
 

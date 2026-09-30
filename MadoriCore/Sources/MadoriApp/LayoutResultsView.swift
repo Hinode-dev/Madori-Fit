@@ -29,7 +29,7 @@ struct LayoutResultsView: View {
                     }
                 }
             } else {
-                ProgressView("配置案を作っています…")
+                ProgressView("配置案を作っています ✨")
             }
         }
         .navigationTitle(fixed.isEmpty ? "配置案" : "固定を残した配置案")
@@ -70,14 +70,14 @@ struct LayoutResultsView: View {
             } label: {
                 Label("手で直す", systemImage: "hand.draw")
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.soft)
             Spacer()
             Button {
                 save(items: layout.items, pinned: fixedIDs, name: defaultName(index: index))
             } label: {
-                Label("この案を保存", systemImage: "square.and.arrow.down")
+                Label("この案を保存", systemImage: "heart.fill")
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.pill)
         }
     }
 

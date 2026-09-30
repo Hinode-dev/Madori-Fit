@@ -22,4 +22,16 @@ final class RoomNamingTests: XCTestCase {
         XCTAssertFalse(RoomNaming.suggestions.isEmpty)
         XCTAssertEqual(Set(RoomNaming.suggestions).count, RoomNaming.suggestions.count)
     }
+
+    func testIconMatchesTheName() {
+        XCTAssertEqual(RoomNaming.icon(for: "主寝室"), "🛏️")
+        XCTAssertEqual(RoomNaming.icon(for: "寝室"), "🛏️")
+        XCTAssertEqual(RoomNaming.icon(for: "2階のリビング"), "🛋️")
+        XCTAssertEqual(RoomNaming.icon(for: "お風呂"), "🛁")
+        XCTAssertEqual(RoomNaming.icon(for: "部屋 1"), "🏠")
+        XCTAssertEqual(RoomNaming.icon(for: ""), "🏠")
+        for suggestion in RoomNaming.suggestions {
+            XCTAssertNotEqual(RoomNaming.icon(for: suggestion), "🏠", suggestion)
+        }
+    }
 }

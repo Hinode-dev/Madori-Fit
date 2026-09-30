@@ -12,6 +12,7 @@ struct DeliveryCheckView: View {
             passagesSection
             resultsSection
         }
+        .madoriBackground()
         .navigationTitle("搬入チェック")
         .sheet(item: $editing) { passage in
             NavigationStack {
